@@ -1,0 +1,50 @@
+{
+  "audit_version": 1,
+  "ranking_id": 11,
+  "processed_count": 100000,
+  "duration_seconds": 147.051,
+  "checks": {
+    "exactly_100_results": true,
+    "sequential_ranks": true,
+    "unique_candidate_ids": true,
+    "scores_non_increasing": true,
+    "all_reasonings_non_empty": true,
+    "all_reasonings_unique": true,
+    "reasoning_prefix_variation": true,
+    "reasoning_facts_grounded": true,
+    "available_product_candidate_top20": true,
+    "unavailable_candidate_below85_or_excluded": true,
+    "experience_contradiction_excluded": true
+  },
+  "passed": true,
+  "reasoning": {
+    "rows_checked": 100,
+    "unique_60_character_prefixes": 68,
+    "failure_counts": {}
+  },
+  "automated_relevance_tiers": {
+    "5": 35,
+    "4": 9,
+    "3": 6
+  },
+  "integrity": {
+    "excluded_profiles": 580,
+    "sampled_for_review": 50,
+    "categories": {
+      "Unsupported skill inventory": 511,
+      "Experience claim contradiction": 16,
+      "Impossible skill-duration claim": 21,
+      "Temporal contradiction": 32
+    },
+    "sample_recommendations": {
+      "exclude": 38,
+      "human_review": 12
+    },
+    "human_signoff_required": true
+  },
+  "artifacts": {
+    "reasoning": "automated_reasoning_audit.csv",
+    "top50": "automated_top50_review.csv",
+    "integrity": "automated_integrity_audit.csv"
+  }
+}

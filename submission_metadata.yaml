@@ -1,0 +1,67 @@
+# The sandbox URL remains pending until the team approves public deployment.
+team_name: "Midnight Misfits"
+
+primary_contact:
+  name: "Zian Surani"
+  email: "zian.surani@gmail.com"
+  phone: "+91 7043733724"
+
+team_members:
+  - name: "Zian Surani"
+    email: "zian.surani@gmail.com"
+    phone: "+91 7043733724"
+    role: "Team Lead"
+  - name: "Dishu Mahajan"
+    email: "neural.dishu@gmail.com"
+    phone: "+91 9877145811"
+    role: "Backend"
+  - name: "Sidharth P Nair"
+    email: "sidharthpnair20@gmail.com"
+    phone: "+91 9497685546"
+    role: "Backend"
+  - name: "Afeef Ahmed Shaik"
+    email: "afeefahmed.shaik@gmail.com"
+    phone: "+91 7702247169"
+    role: "Frontend"
+
+github_repo: "https://github.com/Zian-Surani/crest-redrob-candidate-intelligence"
+sandbox_link: "TODO-hosted-sandbox-url"
+reproduce_command: "python rank.py --candidates ./candidates.jsonl --job-description ./job_description.docx --artifact-dir ./backend/data/embeddings --out ./submission.csv"
+
+compute:
+  platform: "AMD Ryzen 9 8940HX local workstation"
+  cpu_cores: 32
+  ram_gb: 15
+  python_version: "3.11"
+  os: "Windows 11 Home Single Language 10.0.26200"
+  uses_gpu_for_inference: false
+  has_network_during_ranking: false
+  pre_computation_required: true
+  pre_computation_time_minutes: 20.6
+
+ai_tools_used:
+  - "Claude"
+  - "ChatGPT / Codex"
+  - "Ollama Qwen 2.5 Coder 7B and 14B (recruiter assistance only; not ranking)"
+
+ai_usage_summary: |
+  Claude and Codex were used for architecture discussion, implementation, and code review.
+  Local Qwen models are restricted to optional interview-question generation and reasoning
+  audits. The competition ranking path makes no LLM or network calls.
+
+methodology_summary: |
+  CREST streams the 100,000-candidate JSONL through an integrity gate, a hybrid
+  career/skill relevance scorer, experience and location fit, and a behavioral
+  availability adjustment. Offline MiniLM candidate embeddings add a bounded semantic
+  retrieval signal; all human-facing reasoning remains derived from explicit profile
+  evidence. High-risk temporal contradictions and unsupported skill claims are excluded
+  before deterministic top-K selection. Each result includes score components, honest
+  concerns, projected cost-to-hire, and candidate-specific interview questions. The
+  ranking step is CPU-only, network-free, and produces the required top-100 CSV.
+
+declarations:
+  read_submission_spec: true
+  code_is_original_work: true
+  no_collusion: true
+  honeypot_check_done: true
+  reproduction_tested: true
