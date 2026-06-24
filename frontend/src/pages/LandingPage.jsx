@@ -29,7 +29,7 @@ function Navbar() {
           </div>
           <div className="flex items-center gap-3">
             <Link
-              href="/dashboard"
+              to="/dashboard"
               className="font-headline tracking-wider rounded-lg bg-slate-900/90 backdrop-blur-md border border-slate-700/50 px-5 py-2.5 text-sm font-semibold text-white shadow-md transition-all hover:bg-slate-800 hover:shadow-lg active:scale-95"
             >
               Enter App
@@ -255,7 +255,7 @@ function Story() {
 
 export default function LandingPage() {
   return (
-    <div className="relative min-h-screen bg-slate-50 selection:bg-primary/20 font-body overflow-x-hidden">
+    <div className="relative min-h-screen bg-slate-50/80 selection:bg-primary/20 font-body overflow-x-hidden">
       <InteractiveBackground />
       <Navbar />
       <Hero />

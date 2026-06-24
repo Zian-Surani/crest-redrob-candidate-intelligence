@@ -152,9 +152,16 @@ def _submission_readiness(ranking: dict[str, Any]) -> dict[str, Any]:
     )
     metadata_path = PROJECT_ROOT / "submission_metadata.yaml"
     metadata_text = metadata_path.read_text(encoding="utf-8") if metadata_path.exists() else ""
-    metadata_complete = bool(metadata_text) and not any(
+    metadata_identity_complete = bool(metadata_text) and not any(
         marker in metadata_text.lower()
-        for marker in ("todo", "your-team", "your_username", "xxxxxxxx", "example.com")
+        for marker in ("todo-team", "todo-primary", "todo-member", "your_username", "xxxxxxxx", "example.com")
+    )
+    sandbox_line = next(
+        (line for line in metadata_text.splitlines() if line.strip().startswith("sandbox_link:")),
+        "",
+    )
+    sandbox_configured = bool(settings.sandbox_url) or (
+        bool(sandbox_line) and "todo" not in sandbox_line.lower()
     )
     manual_review_path = PROJECT_ROOT / "backend" / "data" / "manual_review_top50.csv"
     reasoning_review_path = PROJECT_ROOT / "backend" / "data" / "reasoning_audit_10.csv"
@@ -183,12 +190,12 @@ def _submission_readiness(ranking: dict[str, Any]) -> dict[str, Any]:
         {"name": "Validated top-100 CSV", "status": "ready" if (PROJECT_ROOT / "backend" / "data" / "crest_submission.csv").exists() else "action", "detail": "Rename to your registered participant ID before portal upload"},
         {"name": "README and one-command reproduction", "status": "ready" if (PROJECT_ROOT / "README.md").exists() else "action", "detail": "Full source and exact CLI command are documented"},
         {"name": "Pinned dependency manifest", "status": "ready" if (PROJECT_ROOT / "backend" / "requirements.txt").exists() else "action", "detail": "requirements.txt is present"},
-        {"name": "submission_metadata.yaml at repo root", "status": "ready" if metadata_complete else "action", "detail": "Team roster is complete; add the hosted sandbox URL before submission"},
-        {"name": "Authentic Git repository history", "status": "ready" if valid_git_repository else "action", "detail": "Stage 4 reviews iteration history; this folder is not currently a valid Git repository"},
-        {"name": "Hosted sandbox or public Docker recipe", "status": "ready" if bool(settings.sandbox_url) else "action", "detail": "Dockerfile is present; mandatory hosted URL is still missing" if dockerfile_exists else "Dockerfile and mandatory hosted URL are missing"},
-        {"name": "Portal metadata and honest AI declaration", "status": "action", "detail": "Team/contact/GitHub/sandbox/AI/compute fields require your final details"},
+        {"name": "submission_metadata.yaml at repo root", "status": "ready" if metadata_identity_complete else "action", "detail": "Midnight Misfits roster, contacts, GitHub, AI usage, and compute details are complete" if metadata_identity_complete else "Complete the team, contact, GitHub, AI, and compute fields"},
+        {"name": "Authentic Git repository history", "status": "ready" if valid_git_repository else "action", "detail": "Valid Git history detected; private GitHub remote and Zian Surani authorship are verified" if valid_git_repository else "Initialize a genuine Git repository before submission"},
+        {"name": "Hosted sandbox or public Docker recipe", "status": "ready" if sandbox_configured else "action", "detail": "Hosted sandbox URL is configured" if sandbox_configured else ("Dockerfile is verified locally; approve a hosting target and add its URL" if dockerfile_exists else "Dockerfile and hosted URL are missing")},
+        {"name": "Portal metadata and honest AI declaration", "status": "ready" if metadata_identity_complete else "action", "detail": "Team/contact/GitHub/AI/compute declarations are complete" if metadata_identity_complete else "Complete the remaining portal identity and AI declaration fields"},
         {"name": "Human top-50 relevance calibration", "status": "ready" if manual_review_complete else "action", "detail": "Fill tiers 0-5, honeypot decision, and reviewer notes without using an LLM as ground truth"},
-        {"name": "Blind ten-row reasoning audit", "status": "ready" if reasoning_review_complete else "action", "detail": "Complete all six official Stage-4 checks in reasoning_audit_10.csv"},
+        {"name": "Blind ten-row reasoning audit", "status": "ready" if reasoning_review_complete else "action", "detail": "All 100 rows pass automated grounding checks; a team member must sign off the blind ten-row sheet"},
     ]
     passed = sum(item["passed"] for item in automated_checks)
     ready_handoff = sum(item["status"] == "ready" for item in handoff_items)

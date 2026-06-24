@@ -12,15 +12,16 @@
 - Qwen 2.5 Coder 7B local interview-question route
 - Qwen 2.5 Coder 14B advisory Stage-4 reasoning audit
 - Recruiter analytics and official hackathon-readiness dashboard
+- Responsive Analytics and Pipeline layouts with browser regression coverage at 1478x1000 and 1280x800
 - Human top-50 calibration and blind ten-row reasoning-review sheets
 - Passing automated audit of all 100 explanations, top-50 relevance, and 50 integrity exclusions
 - Verified 89.7 MB single-container Docker sandbox using the official 50-candidate sample
 - Root submission metadata scaffold and exact reproduction commands
+- Private `Zian-Surani/crest-redrob-candidate-intelligence` repository with verified `main` tree and authorship
 
 ## Human/team actions still required
 
 - Add the hosted sandbox URL to `submission_metadata.yaml` only after public deployment is approved
-- Establish a valid Git repository and create genuine iterative commits; do not manufacture retrospective history
 - Label all rows in `backend/data/manual_review_top50.csv` with relevance tiers 0-5 and reviewer notes
 - Complete all six checks in `backend/data/reasoning_audit_10.csv`
 - Manually inspect a sample of excluded integrity profiles for false positives

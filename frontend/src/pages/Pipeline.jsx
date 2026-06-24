@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
 import DataState from "../components/DataState";
 import { useApi } from "../hooks/useApi";
 import { inr, initials } from "../lib/api";
+import CandidateDrawer from "../components/CandidateDrawer";
 
 const tones = {
   sourced: "bg-slate-100 border-slate-200",
@@ -11,12 +13,13 @@ const tones = {
 };
 
 export default function Pipeline() {
+  const [selected, setSelected] = useState(null);
   const { data, loading, error } = useApi("/pipeline", {
     stages: [],
     funnel: [],
   });
   return (
-    <div className="max-w-[1600px] w-full mx-auto pb-12">
+    <div className="max-w-[1600px] min-w-0 w-full mx-auto pb-12 overflow-hidden">
       <div className="mb-7">
         <h1 className="text-3xl font-headline font-bold text-slate-900 mb-1">
           Recruitment Pipeline
@@ -27,7 +30,7 @@ export default function Pipeline() {
       </div>
       <DataState loading={loading} error={error}>
         <div className="bg-white rounded-premium border border-slate-200/60 shadow-premium p-6 mb-6">
-          <div className="flex justify-between items-center mb-5">
+          <div className="flex flex-wrap justify-between items-center gap-3 mb-5">
             <div>
               <h3 className="font-bold text-slate-900">Ranking funnel</h3>
               <p className="text-xs text-slate-500 mt-1">
@@ -38,7 +41,7 @@ export default function Pipeline() {
               Run #{data?.ranking_id}
             </span>
           </div>
-          <div className="grid grid-cols-5 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-3">
             {(data?.funnel || []).map((stage, index) => (
               <div key={stage.stage} className="relative">
                 <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4">
@@ -50,7 +53,7 @@ export default function Pipeline() {
                   </p>
                 </div>
                 {index < data.funnel.length - 1 && (
-                  <span className="absolute -right-3 top-1/2 z-10 text-slate-300 material-symbols-outlined text-[16px]">
+                  <span className="hidden xl:block absolute -right-3 top-1/2 z-10 text-slate-300 material-symbols-outlined text-[16px]">
                     chevron_right
                   </span>
                 )}
@@ -62,7 +65,7 @@ export default function Pipeline() {
           initial="hidden"
           animate="visible"
           variants={{ visible: { transition: { staggerChildren: 0.08 } } }}
-          className="flex space-x-5 overflow-x-auto pb-4"
+          className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-4 gap-5 pb-4 min-w-0"
         >
           {(data?.stages || []).map((stage) => (
             <motion.section
@@ -71,7 +74,7 @@ export default function Pipeline() {
                 hidden: { opacity: 0, x: -15 },
                 visible: { opacity: 1, x: 0 },
               }}
-              className="flex-shrink-0 w-[285px]"
+              className="min-w-0"
             >
               <div
                 className={`mb-4 px-4 py-3 rounded-2xl border ${tones[stage.id]} flex justify-between items-center`}
@@ -85,7 +88,8 @@ export default function Pipeline() {
                 {stage.items.map((candidate) => (
                   <article
                     key={candidate.candidate_id}
-                    className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200/60 hover:border-primary/30 transition-colors"
+                    onClick={() => setSelected(candidate)}
+                    className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200/60 hover:border-primary/30 transition-colors cursor-pointer"
                   >
                     <div className="flex items-center space-x-3">
                       <div className="w-8 h-8 rounded-full bg-primary/10 text-primary text-[10px] font-bold flex items-center justify-center">
@@ -118,6 +122,7 @@ export default function Pipeline() {
           ))}
         </motion.div>
       </DataState>
+      {selected && <CandidateDrawer candidate={selected} onClose={() => setSelected(null)} />}
     </div>
   );
 }

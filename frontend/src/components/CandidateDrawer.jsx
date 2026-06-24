@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { api, inr, initials } from '../lib/api'
 
 const componentLabels = {
@@ -14,6 +14,24 @@ export default function CandidateDrawer({ candidate, onClose }) {
   const [reasoningAudit, setReasoningAudit] = useState(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+
+  useEffect(() => {
+    document.body.style.overflow = 'hidden'
+
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = 'auto'
+      window.removeEventListener('keydown', handleKeyDown);
+    }
+  }, [onClose])
+
   if (!candidate) return null
 
   const runShift = async (event) => {
@@ -58,7 +76,7 @@ export default function CandidateDrawer({ candidate, onClose }) {
   return (
     <div className="fixed inset-0 z-[100] flex justify-end">
       <button aria-label="Close candidate analysis" onClick={onClose} className="absolute inset-0 bg-slate-900/25 backdrop-blur-sm" />
-      <aside className="relative w-full max-w-2xl h-full bg-slate-50 shadow-2xl overflow-y-auto animate-slide-in-right">
+      <aside data-lenis-prevent="true" className="relative w-full max-w-2xl h-full bg-slate-50 shadow-2xl overflow-y-auto overscroll-contain animate-slide-in-right">
         <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-xl border-b border-slate-200 px-7 py-5">
           <div className="flex items-start justify-between">
             <div className="flex items-center space-x-4">
@@ -117,12 +135,27 @@ export default function CandidateDrawer({ candidate, onClose }) {
                 <form onSubmit={runShift} className="bg-white rounded-premium border border-slate-200/60 shadow-premium p-6 space-y-4">
                   <div><h3 className="font-bold text-slate-900">JD Shift analysis</h3><p className="text-xs text-slate-500 mt-1">Rescore this candidate only and show the decision delta.</p></div>
                   <div className="grid grid-cols-2 gap-3">
-                    <input name="title" required placeholder="Alternative job title" className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm" />
-                    <input name="location" required defaultValue="India" placeholder="Location" className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm" />
-                    <input name="salary_min_lpa" type="number" defaultValue="20" className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm" />
-                    <input name="salary_max_lpa" type="number" defaultValue="40" className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm" />
+                    <div>
+                      <label className="block text-[10px] uppercase tracking-wider font-bold text-slate-500 mb-1">Job Title</label>
+                      <input name="title" required placeholder="Alternative job title" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm" />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] uppercase tracking-wider font-bold text-slate-500 mb-1">Location</label>
+                      <input name="location" required defaultValue="India" placeholder="Location" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm" />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] uppercase tracking-wider font-bold text-slate-500 mb-1">Min Salary (LPA)</label>
+                      <input name="salary_min_lpa" type="number" defaultValue="20" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm" />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] uppercase tracking-wider font-bold text-slate-500 mb-1">Max Salary (LPA)</label>
+                      <input name="salary_max_lpa" type="number" defaultValue="40" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm" />
+                    </div>
                   </div>
-                  <textarea name="description" required minLength="40" rows="6" placeholder="Paste the alternative job description…" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm resize-none" />
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-wider font-bold text-slate-500 mb-1">Job Description</label>
+                    <textarea name="description" required minLength="40" rows="6" placeholder="Paste the alternative job description…" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm resize-none" />
+                  </div>
                   <button disabled={busy} className="bg-primary text-white rounded-xl px-5 py-2.5 text-sm font-bold disabled:opacity-50">{busy ? 'Evaluating…' : 'Compare fit'}</button>
                   {shiftResult && <div className="grid grid-cols-2 gap-3 pt-2"><Metric label="New score" value={`${shiftResult.score.toFixed(1)}%`} tone="text-primary" /><Metric label="Score delta" value={`${shiftResult.score_delta > 0 ? '+' : ''}${shiftResult.score_delta}`} tone={shiftResult.score_delta >= 0 ? 'text-success' : 'text-danger'} /></div>}
                 </form>

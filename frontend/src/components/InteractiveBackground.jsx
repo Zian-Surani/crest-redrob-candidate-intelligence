@@ -1,6 +1,6 @@
 import { Canvas, useFrame } from "@react-three/fiber";
-import { MeshDistortMaterial, Environment } from "@react-three/drei";
-import { useRef, useState, useEffect } from "react";
+import { MeshDistortMaterial } from "@react-three/drei";
+import { useRef, useEffect } from "react";
 import * as THREE from "three";
 
 function SplittingBlob({ position, splitDirection, color, distort, speed }) {
@@ -20,7 +20,7 @@ function SplittingBlob({ position, splitDirection, color, distort, speed }) {
     const floatY = Math.sin(time * speed) * 0.2;
 
     // The separation distance grows exponentially as you scroll
-    const separation = Math.pow(scrollFactor, 2) * 5;
+    const separation = 0.42 + Math.pow(scrollFactor, 2) * 5;
 
     // Split targets
     const targetAX = position[0] - splitDirection[0] * separation;
@@ -67,20 +67,20 @@ function SplittingBlob({ position, splitDirection, color, distort, speed }) {
   return (
     <group>
       <mesh ref={meshA} position={position}>
-        <sphereGeometry args={[1, 64, 64]} />
+        <sphereGeometry args={[0.82, 48, 48]} />
         <MeshDistortMaterial
           ref={materialRef}
           color={color}
           envMapIntensity={0.8}
           clearcoat={0.8}
           clearcoatRoughness={0.2}
-          metalness={0.1}
-          roughness={0.4}
+          metalness={0}
+          roughness={0.55}
           distort={distort}
           speed={speed * 1.5}
           depthWrite={false}
           transparent={true}
-          opacity={0.9}
+          opacity={0.34}
         />
       </mesh>
       <mesh
@@ -91,19 +91,19 @@ function SplittingBlob({ position, splitDirection, color, distort, speed }) {
           position[2] + 0.001,
         ]}
       >
-        <sphereGeometry args={[1, 64, 64]} />
+        <sphereGeometry args={[0.82, 48, 48]} />
         <MeshDistortMaterial
           color={color}
           envMapIntensity={0.8}
           clearcoat={0.8}
           clearcoatRoughness={0.2}
-          metalness={0.1}
-          roughness={0.4}
+          metalness={0}
+          roughness={0.55}
           distort={distort}
           speed={speed * 1.5}
           depthWrite={false}
           transparent={true}
-          opacity={0.9}
+          opacity={0.24}
         />
       </mesh>
     </group>
@@ -111,15 +111,13 @@ function SplittingBlob({ position, splitDirection, color, distort, speed }) {
 }
 
 function Scene() {
-  const [mousePosition, setMousePosition] = useState(new THREE.Vector2());
+  const mousePosition = useRef(new THREE.Vector2());
 
   useEffect(() => {
     const handleMouseMove = (e) => {
-      setMousePosition(
-        new THREE.Vector2(
-          (e.clientX / window.innerWidth) * 2 - 1,
-          -(e.clientY / window.innerHeight) * 2 + 1,
-        ),
+      mousePosition.current.set(
+        (e.clientX / window.innerWidth) * 2 - 1,
+        -(e.clientY / window.innerHeight) * 2 + 1,
       );
     };
     window.addEventListener("mousemove", handleMouseMove);
@@ -133,12 +131,12 @@ function Scene() {
       // Parallax effect
       groupRef.current.position.x = THREE.MathUtils.lerp(
         groupRef.current.position.x,
-        mousePosition.x * 2,
+        mousePosition.current.x * 2,
         0.05,
       );
       groupRef.current.position.y = THREE.MathUtils.lerp(
         groupRef.current.position.y,
-        mousePosition.y * 2,
+        mousePosition.current.y * 2,
         0.05,
       );
     }
@@ -147,7 +145,7 @@ function Scene() {
   return (
     <group ref={groupRef}>
       <SplittingBlob
-        position={[-3, 1, -2]}
+        position={[-3.6, 1, -3]}
         splitDirection={[-1, 0.5, -0.5]}
         color="#bfdbfe"
         distort={0.4}
@@ -161,7 +159,7 @@ function Scene() {
         speed={1.5}
       />
       <SplittingBlob
-        position={[0, -2, -1]}
+        position={[0, -3, -4]}
         splitDirection={[-0.8, -0.2, 0.5]}
         color="#60a5fa"
         distort={0.3}
@@ -187,9 +185,25 @@ function Scene() {
 
 export default function InteractiveBackground() {
   return (
-    <div className="fixed inset-0 z-0 pointer-events-none">
-      <Canvas camera={{ position: [0, 0, 8], fov: 45 }}>
-        <ambientLight intensity={0.5} />
+    <div
+      className="fixed inset-0 z-0 pointer-events-none overflow-hidden"
+      aria-hidden="true"
+      data-testid="interactive-background"
+    >
+      <div className="absolute -left-24 top-24 h-80 w-80 rounded-full bg-blue-200/35 blur-3xl" />
+      <div className="absolute -right-20 top-12 h-96 w-96 rounded-full bg-violet-200/30 blur-3xl" />
+      <div className="absolute bottom-0 left-1/3 h-80 w-80 rounded-full bg-sky-200/30 blur-3xl" />
+      <Canvas
+        camera={{ position: [0, 0, 8], fov: 45 }}
+        dpr={[1, 1.5]}
+        gl={{
+          alpha: true,
+          antialias: true,
+          powerPreference: "high-performance",
+        }}
+      >
+        <ambientLight intensity={1.1} />
+        <hemisphereLight args={["#ffffff", "#bfdbfe", 1.4]} />
         <directionalLight
           position={[10, 10, 5]}
           intensity={1.5}
@@ -201,7 +215,6 @@ export default function InteractiveBackground() {
           color="#2563eb"
         />
         <Scene />
-        <Environment preset="city" />
       </Canvas>
     </div>
   );
