@@ -12,6 +12,11 @@ from app.store import Store
 
 
 LABEL_FIELDS = ("human_relevance_tier", "honeypot_flag", "reviewer_notes")
+REASONING_LABEL_FIELDS = (
+    "specific_facts_pass", "jd_connection_pass", "honest_concerns_pass",
+    "no_hallucination_pass", "variation_pass", "rank_consistency_pass",
+    "reviewer_notes",
+)
 
 
 def existing_labels(path: Path) -> dict[str, dict[str, str]]:
@@ -20,6 +25,18 @@ def existing_labels(path: Path) -> dict[str, dict[str, str]]:
     with path.open("r", encoding="utf-8-sig", newline="") as handle:
         return {
             row["candidate_id"]: {field: row.get(field, "") for field in LABEL_FIELDS}
+            for row in csv.DictReader(handle)
+        }
+
+
+def existing_reasoning_labels(path: Path) -> dict[str, dict[str, str]]:
+    if not path.exists():
+        return {}
+    with path.open("r", encoding="utf-8-sig", newline="") as handle:
+        return {
+            row["candidate_id"]: {
+                field: row.get(field, "") for field in REASONING_LABEL_FIELDS
+            }
             for row in csv.DictReader(handle)
         }
 
@@ -51,6 +68,7 @@ def export_top_review(ranking: dict[str, Any], path: Path, top: int) -> None:
 
 
 def export_reasoning_sample(ranking: dict[str, Any], path: Path, size: int, seed: int) -> None:
+    labels = existing_reasoning_labels(path)
     population = ranking["results"]
     selected = random.Random(seed).sample(population, min(size, len(population)))
     selected.sort(key=lambda item: item["rank"])
@@ -67,6 +85,10 @@ def export_reasoning_sample(ranking: dict[str, Any], path: Path, size: int, seed
                 "rank": result["rank"], "candidate_id": result["candidate_id"],
                 "name": result["name"], "score": result["score"],
                 "reasoning": result["reasoning"],
+                **labels.get(
+                    result["candidate_id"],
+                    {field: "" for field in REASONING_LABEL_FIELDS},
+                ),
             })
 
 

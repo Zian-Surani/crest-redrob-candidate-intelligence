@@ -224,11 +224,11 @@ class CandidateScorer:
             elif career_hits:
                 depth = min(0.92, 0.58 + 0.08 * len(career_hits))
                 status = "semantic"
-                evidence = f"career delivery references {_display_hits(career_hits[:3])}"
+                evidence = f"{_display_hits(career_hits[:3])} in career project descriptions"
             elif text_hits:
                 depth = 0.38
                 status = "semantic"
-                evidence = f"profile mentions {_display_hits(text_hits[:2])}"
+                evidence = f"{_display_hits(text_hits[:2])} in profile text"
             else:
                 depth = 0.0
                 status = "missing"
@@ -295,13 +295,20 @@ class CandidateScorer:
         behavioral = self._behavior(signals)
         final_score = raw_fit * behavioral["multiplier"] * integrity["penalty"]
         final_score = round(_clamp(final_score, 0, 100), 3)
+        if years < minimum:
+            # The released JD targets 5-9 years. Adjacent 4.x-year profiles can
+            # remain in the shortlist, but should not occupy the top band that
+            # hidden NDCG@10 will likely reserve for candidates meeting the floor.
+            shortfall = minimum - years
+            final_score = min(final_score, 83.8 - max(0.0, shortfall - 1.0) * 7.0)
+            final_score = round(max(0.0, final_score), 3)
 
         cph = self._cost_per_hire(signals, job) if include_details else None
         reasoning = (
             self._reasoning(
                 str(candidate.get("candidate_id", "")), profile, signals, components,
                 matched_requirements, missing_requirements, services_only, integrity,
-                production_hits, len(relevant_product_roles),
+                production_hits, len(relevant_product_roles), minimum,
             )
             if include_details else ""
         )
@@ -357,6 +364,7 @@ class CandidateScorer:
             "_explain_context": {
                 "production_hits": production_hits,
                 "relevant_product_roles": len(relevant_product_roles),
+                "minimum_experience": minimum,
             },
             "disqualified": not integrity["passed"],
         }
@@ -374,6 +382,7 @@ class CandidateScorer:
             result["missing_requirements"], bool(result["services_only"]),
             result["integrity"], list(context.get("production_hits", [])),
             int(context.get("relevant_product_roles", 0)),
+            float(context.get("minimum_experience", 0)),
         )
         result["interview_questions"] = self._questions(
             result["profile"], result["matched_requirements"],
@@ -398,11 +407,17 @@ class CandidateScorer:
         if notice <= 30:
             notice_factor = 1.00
         elif notice <= 60:
-            notice_factor = 0.96
+            notice_factor = 0.97
         elif notice <= 90:
-            notice_factor = 0.90
+            notice_factor = 0.93
+        elif response >= 0.80 and signals.get("open_to_work_flag") and active >= 0.55:
+            notice_factor = 0.89
+        elif response >= 0.75 and signals.get("open_to_work_flag") and active >= 0.55:
+            notice_factor = 0.88
+        elif response >= 0.60 and signals.get("open_to_work_flag"):
+            notice_factor = 0.84
         else:
-            notice_factor = 0.78
+            notice_factor = 0.80
         quality = (
             response * 0.24 + response_speed * 0.08 + active * 0.15 + open_to_work * 0.16
             + interview * 0.17 + offer * 0.08 + completeness * 0.07 + verified * 0.05
@@ -455,7 +470,8 @@ class CandidateScorer:
         candidate_id: str, profile: dict[str, Any], signals: dict[str, Any],
         components: dict[str, float],
         requirements: list[dict[str, Any]], missing: list[str], services_only: bool,
-        integrity: dict[str, Any], production_hits: list[str], relevant_product_roles: int,
+        integrity: dict[str, Any], production_hits: list[str],
+        relevant_product_roles: int, minimum_experience: float = 0,
     ) -> str:
         role = profile.get("current_title", "Candidate")
         company = profile.get("current_company", "their current company")
@@ -524,6 +540,8 @@ class CandidateScorer:
         notice = int(signals.get("notice_period_days", 0) or 0)
         last_active = str(signals.get("last_active_date", "unknown"))
         concerns = []
+        if minimum_experience and years < minimum_experience:
+            concerns.append(f"{years:g} years versus {minimum_experience:g}-year target")
         if missing:
             concerns.append(f"missing evidence for {missing[0]}")
         if notice > 30:
@@ -544,7 +562,7 @@ class CandidateScorer:
             second = f"Availability is mixed: {response}% response, not marked open to work, last active {last_active}"
         else:
             second = f"Availability is mixed: {response}% response and last active {last_active}"
-        concern_text = ", ".join(item.rstrip(". ") for item in concerns[:2])
+        concern_text = ", ".join(item.rstrip(". ") for item in concerns[:3])
         second += "; " + ("primary concerns: " + concern_text if concerns else "no major concern detected") + "."
         return f"{first} {second}"
 

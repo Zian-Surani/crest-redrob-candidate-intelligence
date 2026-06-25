@@ -20,7 +20,7 @@ Status: Completed. All dashboard areas use live APIs while keeping the existing 
 
 ### Phase 4: Competition validation
 
-Status: Completed. The calibrated hybrid full pool processes in 150.602 seconds including local MiniLM loading. The final run removed 580 critical/high-risk profiles, ranked 100, placed `CAND_0018499` at rank 1, and the organizer validator accepted the CSV. Ranking-quality regressions pass: `CAND_0000031` is rank 16, `CAND_0094759` is outside the top 100, `CAND_0093547` is excluded for contradictory experience claims, and `CAND_0067866` is removed because zero relevant product-system roles are insufficient for the final shortlist.
+Status: Completed. The calibrated hybrid full pool processes in 201.522 seconds including local MiniLM loading. The final run removed 580 critical/high-risk profiles, ranked 100, placed `CAND_0018499` at rank 1, and the organizer validator accepted the CSV. Ranking-quality regressions pass: `CAND_0000031` is rank 13, under-floor `CAND_0042506` is below the top 30, high-availability 120-day-notice candidates `CAND_0096142` and `CAND_0007412` are restored into fairer rank bands, `CAND_0094759` is outside the top 100, `CAND_0093547` is excluded for contradictory experience claims, and `CAND_0067866` is removed because zero relevant product-system roles are insufficient for the final shortlist.
 
 ### Phase 5: Operational handoff
 

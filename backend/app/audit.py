@@ -91,6 +91,8 @@ def reasoning_checks(result: dict[str, Any], score_order_pass: bool) -> dict[str
     internal_terms = (
         "Career evidence:",
         "Profile mention:",
+        "career delivery references",
+        "sklearn",
         "raw_fit",
         "component_max",
         "matched_requirements",
