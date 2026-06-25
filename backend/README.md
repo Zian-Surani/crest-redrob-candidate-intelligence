@@ -5,7 +5,7 @@ FastAPI service for deterministic, CPU-only candidate intelligence.
 ## Main API groups
 
 - `/api/jobs`: store JDs and inspect extracted requirements
-- `/api/rankings`: run sample or full-pool ranking and export competition CSV
+- `/api/rankings`: run the official full-pool ranking and export competition CSV
 - `/api/candidates`: shortlist search, evidence detail, JD-shift analysis, interview questions
 - `/api/pipeline`, `/api/flagged`, `/api/analytics/overview`: recruiter decision analytics
 - `/api/auth`: local SQLite SaaS account shell
@@ -29,7 +29,7 @@ Interactive API documentation is available at `http://127.0.0.1:8000/docs` while
 ```powershell
 $env:PYTHONPATH='.'
 pytest -q
-python -m app.cli --scope sample --output data/sample_ranked.csv
+python -m app.cli --scope full --output data/crest_submission.csv --persist
 ```
 
 Generate the offline hybrid artifact once (network remains off during ranking):
@@ -37,7 +37,7 @@ Generate the offline hybrid artifact once (network remains off during ranking):
 ```powershell
 python -m pip install -r requirements-semantic.txt
 python -m app.precompute_embeddings --scope full --output-dir data/embeddings
-python -m app.cli --scope full --output data/crest_submission.csv
+python -m app.cli --scope full --output data/crest_submission.csv --persist
 ```
 
 Create human calibration and blind Stage-4 review sheets:
@@ -52,7 +52,7 @@ The Qwen models are not used by `app.cli`. `qwen2.5-coder:7b` is routed to optio
 
 The model router adds prompt-injection boundaries around candidate text, requests structured JSON, uses deterministic fallbacks, and records which model produced each advisory result.
 
-The final calibrated hybrid full-pool runtime on this machine is 147.051 seconds, including local MiniLM model loading, below the challenge's five-minute wall-clock limit. It processed 100,000 candidates, excluded 580 integrity failures, and retained 100 ranked rows. Candidate-vector precomputation took 20.6 minutes and is outside the ranking window.
+The final calibrated hybrid full-pool command should be run with `--persist` so SQLite, analytics, review exports, and the submission CSV are all based on the same official 100,000-candidate run. Candidate-vector precomputation is outside the ranking window.
 
 Generate reproducible audit artifacts with:
 

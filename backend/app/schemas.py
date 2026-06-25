@@ -29,7 +29,7 @@ class JobCreate(BaseModel):
 
 class RankingRunRequest(BaseModel):
     job_id: int
-    scope: Literal["sample", "full"] = "sample"
+    scope: Literal["sample", "full"] = "full"
     max_candidates: int | None = Field(default=None, ge=1, le=100_000)
     limit: int = Field(default=100, ge=1, le=100)
 

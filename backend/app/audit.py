@@ -88,11 +88,19 @@ def reasoning_checks(result: dict[str, Any], score_order_pass: bool) -> dict[str
     )
     open_claim_pass = not (positive_open_claim and not bool(result.get("open_to_work")))
     profile_pass = str(profile.get("current_title", role)) == role
+    internal_terms = (
+        "Career evidence:",
+        "Profile mention:",
+        "raw_fit",
+        "component_max",
+        "matched_requirements",
+    )
+    internal_pass = not any(term in reasoning for term in internal_terms)
     return {
         "specific_facts_pass": facts_pass and profile_pass,
         "jd_connection_pass": jd_pass,
         "honest_concerns_pass": concerns_pass,
-        "no_hallucination_pass": evidence_pass and open_claim_pass,
+        "no_hallucination_pass": evidence_pass and open_claim_pass and internal_pass,
         "rank_consistency_pass": score_order_pass,
     }
 

@@ -1,8 +1,8 @@
 {
   "audit_version": 1,
-  "ranking_id": 11,
+  "ranking_id": 14,
   "processed_count": 100000,
-  "duration_seconds": 147.051,
+  "duration_seconds": 150.602,
   "checks": {
     "exactly_100_results": true,
     "sequential_ranks": true,
@@ -19,13 +19,13 @@
   "passed": true,
   "reasoning": {
     "rows_checked": 100,
-    "unique_60_character_prefixes": 68,
+    "unique_60_character_prefixes": 81,
     "failure_counts": {}
   },
   "automated_relevance_tiers": {
-    "5": 35,
+    "5": 34,
     "4": 9,
-    "3": 6
+    "3": 7
   },
   "integrity": {
     "excluded_profiles": 580,

@@ -14,7 +14,7 @@ The codebase is clean for the private GitHub handoff. The final source tree cont
 - Frontend dependencies: `npm audit --omit=dev` found no known vulnerabilities.
 - Python demo and full manifests: `pip-audit` found no known vulnerabilities after upgrading to FastAPI 0.138.0, Starlette 1.3.1, Uvicorn 0.49.0, Pydantic 2.13.4, and pytest 9.0.3.
 - Submission: the organizer validator reports `Submission is valid.`
-- Full ranking: 100,000 processed, 580 excluded, 100 ranked, 147.051 seconds.
+- Full ranking: 100,000 processed, 580 excluded, 100 ranked, 150.602 seconds.
 - Automated ranking audit: every check in `backend/data/automated_audit_report.json` passes.
 - Docker: the 89.5 MB local image served the frontend, health API, analytics, and the official 50-candidate sample ranking.
 - Staged Git content: whitespace and secret scans passed; the staged source was under 1 MB excluding the official demo sample and generated artifacts.

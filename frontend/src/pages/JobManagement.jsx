@@ -46,7 +46,7 @@ export default function JobManagement() {
     try {
       await api("/rankings/run", {
         method: "POST",
-        body: JSON.stringify({ job_id: jobId, scope: "sample", limit: 50 }),
+        body: JSON.stringify({ job_id: jobId, scope: "full", limit: 100 }),
       });
       navigate("/dashboard/candidates");
     } catch (requestError) {
@@ -165,7 +165,7 @@ export default function JobManagement() {
                   onClick={() => runJob(job.id)}
                   className="bg-slate-900 text-white px-4 py-2.5 rounded-xl text-xs font-bold hover:bg-slate-800 disabled:opacity-50"
                 >
-                  Rank sample pool
+                  Rank official full pool
                 </button>
               </div>
             </motion.article>

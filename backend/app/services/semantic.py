@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 from pathlib import Path
 from typing import Any
 
@@ -36,10 +37,14 @@ class SemanticScorer:
         self.embeddings_path = artifact_dir / "candidate_embeddings.npy"
         self.ids_path = artifact_dir / "candidate_ids.txt"
         self.metadata_path = artifact_dir / "metadata.json"
+        self.bulk_similarity = os.getenv(
+            "CREST_SEMANTIC_BULK_SIMILARITY", "false"
+        ).strip().lower() in {"1", "true", "yes", "on"}
         self._embeddings = None
         self._id_to_index: dict[str, int] | None = None
         self._model = None
         self._job_vector = None
+        self._similarities = None
         self._job_hash = ""
         self._error = ""
 
@@ -64,6 +69,9 @@ class SemanticScorer:
             "candidate_count": metadata.get("candidate_count", 0),
             "dimension": metadata.get("dimension", 0),
             "max_seq_length": metadata.get("max_seq_length", 0),
+            "bulk_similarity": self.bulk_similarity,
+            "precomputed_similarity_count": int(len(self._similarities))
+            if self._similarities is not None else 0,
             "artifact_dir": str(self.artifact_dir),
             "network_required_during_ranking": False,
             "error": self._error,
@@ -93,14 +101,20 @@ class SemanticScorer:
             self._embeddings = None
             self._id_to_index = None
             self._model = None
+            self._similarities = None
             return False
 
     def prepare_job(self, description: str) -> bool:
         if not self._load():
             self._job_vector = None
+            self._similarities = None
             return False
         digest = hashlib.sha256(description.encode("utf-8")).hexdigest()
-        if digest == self._job_hash and self._job_vector is not None:
+        if (
+            digest == self._job_hash
+            and self._job_vector is not None
+            and self._similarities is not None
+        ):
             return True
         vector = self._model.encode(
             [description], normalize_embeddings=True,
@@ -108,6 +122,19 @@ class SemanticScorer:
         )[0]
         self._job_vector = vector
         self._job_hash = digest
+        try:
+            import numpy as np
+
+            if self.bulk_similarity:
+                similarities = self._embeddings @ vector.astype("float32")
+                self._similarities = np.clip(
+                    np.asarray(similarities, dtype="float32"), 0.0, 1.0
+                )
+            else:
+                self._similarities = None
+        except Exception as exc:
+            self._error = f"semantic vector pre-score failed: {exc}"
+            self._similarities = None
         return True
 
     def similarity(self, candidate_id: str) -> float | None:
@@ -116,6 +143,8 @@ class SemanticScorer:
         index = self._id_to_index.get(candidate_id)
         if index is None:
             return None
+        if self._similarities is not None:
+            return float(self._similarities[index])
         import numpy as np
         similarity = float(np.dot(self._embeddings[index].astype("float32"), self._job_vector))
         return min(1.0, max(0.0, similarity))

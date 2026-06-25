@@ -38,7 +38,7 @@ The official challenge data is already extracted below `backend/data/archive/`. 
 ```powershell
 cd backend
 $env:PYTHONPATH='.'
-python -m app.cli --scope full --output data/crest_submission.csv
+python -m app.cli --scope full --output data/crest_submission.csv --persist
 ```
 
 For organizer reproduction from the repository root:
@@ -47,9 +47,9 @@ For organizer reproduction from the repository root:
 python rank.py --candidates ./candidates.jsonl --job-description ./job_description.docx --artifact-dir ./backend/data/embeddings --out ./submission.csv
 ```
 
-The current verified artifact is [backend/data/crest_submission.csv](backend/data/crest_submission.csv). It contains exactly 100 ranked records and passes the organizer-supplied validator.
+The current verified artifact is [backend/data/crest_submission.csv](backend/data/crest_submission.csv). It contains exactly 100 ranked records and passes the organizer-supplied validator. Use `--persist` for the final full run so the web analytics and review exports read the same actual 100,000-candidate ranking as the submission CSV.
 
-Latest hybrid benchmark: 100,000 candidates, 580 integrity exclusions, 100 ranked, 147.051 seconds, with `CAND_0077337` remaining rank 1. The calibrated regression set places `CAND_0000031` at rank 18, removes the low-availability `CAND_0094759` from the top 100, and excludes the contradictory experience claim on `CAND_0093547`.
+Latest hybrid benchmark: 100,000 candidates, 580 integrity exclusions, 100 ranked, 150.602 seconds, with `CAND_0018499` at rank 1. The calibrated regression set places `CAND_0000031` at rank 16, removes the low-availability `CAND_0094759` from the top 100, excludes the contradictory experience claim on `CAND_0093547`, and removes the zero-product-role Tech Mahindra profile `CAND_0067866`.
 
 Run the independent automated audit after a persisted full ranking:
 

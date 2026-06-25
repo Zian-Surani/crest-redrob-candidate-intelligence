@@ -11,6 +11,7 @@ from app.repository import CandidateRepository
 from app.services.jd_parser import parse_job
 from app.services.scoring import CandidateScorer, RankingService
 from app.services.semantic import SemanticScorer
+from app.store import Store
 
 
 def main() -> None:
@@ -21,6 +22,11 @@ def main() -> None:
     parser.add_argument("--job-description", help="Path to the released .docx or a text JD")
     parser.add_argument("--artifact-dir", help="Path to precomputed semantic artifacts")
     parser.add_argument("--output", "--out", dest="output", default="crest_submission.csv")
+    parser.add_argument(
+        "--persist",
+        action="store_true",
+        help="Persist this run to the local SQLite store for Analytics/Pipeline pages.",
+    )
     args = parser.parse_args()
 
     candidate_path = Path(args.candidates).resolve() if args.candidates else None
@@ -57,9 +63,21 @@ def main() -> None:
         writer.writerow(["candidate_id", "rank", "score", "reasoning"])
         for item in outcome["results"]:
             writer.writerow([item["candidate_id"], item["rank"], f"{item['normalized_score']:.6f}", item["reasoning"]])
+    ranking_id = None
+    if args.persist:
+        store = Store(settings.database_path)
+        store.initialize()
+        persisted_job = store.create_job(job)
+        ranking = store.save_ranking({
+            "job_id": persisted_job["id"],
+            "scope": args.scope,
+            **outcome,
+        })
+        ranking_id = ranking["id"]
     print(
         f"Wrote {len(outcome['results'])} rows to {output.resolve()} after scoring "
         f"{outcome['processed_count']} candidates in {outcome['duration_seconds']}s."
+        + (f" Persisted ranking_id={ranking_id}." if ranking_id else "")
     )
 
 

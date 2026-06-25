@@ -73,6 +73,33 @@ def _skill_name_matches(name: str, terms: tuple[str, ...]) -> bool:
     return False
 
 
+def _display_hits(hits: list[str]) -> str:
+    """Render parser hits as human-facing evidence, never as internal tokens."""
+    labels = {
+        "sklearn": "scikit-learn",
+        "pytorch": "PyTorch",
+        "tensorflow": "TensorFlow",
+        "fastapi": "FastAPI",
+        "flask": "Flask",
+        "faiss": "FAISS",
+        "qdrant": "Qdrant",
+        "pinecone": "Pinecone",
+        "milvus": "Milvus",
+        "weaviate": "Weaviate",
+        "bm25": "BM25",
+        "ndcg": "NDCG",
+        "mrr": "MRR",
+        "map": "MAP",
+    }
+    rendered = []
+    for hit in hits:
+        key = str(hit).strip().lower()
+        if not key:
+            continue
+        rendered.append(labels.get(key, key.replace("-", " ").title()))
+    return ", ".join(dict.fromkeys(rendered))
+
+
 class CandidateScorer:
     def __init__(self, semantic: SemanticScorer | None = None):
         self.semantic = semantic
@@ -90,7 +117,10 @@ class CandidateScorer:
         )
         return self.semantic.prepare_job(semantic_query)
 
-    def evaluate(self, candidate: dict[str, Any], job: dict[str, Any]) -> dict[str, Any]:
+    def evaluate(
+        self, candidate: dict[str, Any], job: dict[str, Any],
+        include_details: bool = True,
+    ) -> dict[str, Any]:
         profile = candidate.get("profile", {})
         signals = candidate.get("redrob_signals", {})
         career = candidate.get("career_history", [])
@@ -107,6 +137,12 @@ class CandidateScorer:
         )
 
         title = str(profile.get("current_title", "")).lower()
+        current_company = str(profile.get("current_company", "")).lower()
+        current_industry = str(profile.get("current_industry", "")).lower()
+        current_services_company = (
+            current_company in SERVICE_COMPANIES
+            or current_industry == "it services"
+        )
         role_fit = 1.0 if any(term in title for term in ROLE_TERMS) else 0.25
         production_hits = [term for term in PRODUCTION_TERMS if term in career_text]
         production_fit = min(1.0, len(production_hits) / 4)
@@ -182,17 +218,17 @@ class CandidateScorer:
                 )
                 status = "exact" if career_hits else "semantic"
                 evidence = (
-                    f"{best.get('name')} · {best.get('duration_months', 0)} months · "
+                    f"{best.get('name')} - {best.get('duration_months', 0)} months - "
                     f"{best.get('proficiency', 'listed')}"
                 )
             elif career_hits:
                 depth = min(0.92, 0.58 + 0.08 * len(career_hits))
                 status = "semantic"
-                evidence = f"Career evidence: {', '.join(career_hits[:3])}"
+                evidence = f"career delivery references {_display_hits(career_hits[:3])}"
             elif text_hits:
                 depth = 0.38
                 status = "semantic"
-                evidence = f"Profile mention: {', '.join(text_hits[:2])}"
+                evidence = f"profile mentions {_display_hits(text_hits[:2])}"
             else:
                 depth = 0.0
                 status = "missing"
@@ -249,18 +285,30 @@ class CandidateScorer:
             raw_fit *= 0.7
         if not any(term in full_text for term in ("retrieval", "search", "ranking", "recommend")):
             raw_fit *= 0.72
+        if not relevant_product_roles:
+            raw_fit *= 0.82
+            if current_services_company:
+                raw_fit *= 0.72
+        elif current_services_company and len(relevant_product_roles) <= 1:
+            raw_fit *= 0.90
 
         behavioral = self._behavior(signals)
         final_score = raw_fit * behavioral["multiplier"] * integrity["penalty"]
         final_score = round(_clamp(final_score, 0, 100), 3)
 
-        cph = self._cost_per_hire(signals, job)
-        reasoning = self._reasoning(
-            str(candidate.get("candidate_id", "")), profile, signals, components,
-            matched_requirements, missing_requirements, services_only, integrity,
-            production_hits, len(relevant_product_roles),
+        cph = self._cost_per_hire(signals, job) if include_details else None
+        reasoning = (
+            self._reasoning(
+                str(candidate.get("candidate_id", "")), profile, signals, components,
+                matched_requirements, missing_requirements, services_only, integrity,
+                production_hits, len(relevant_product_roles),
+            )
+            if include_details else ""
         )
-        questions = self._questions(profile, matched_requirements, missing_requirements)
+        questions = (
+            self._questions(profile, matched_requirements, missing_requirements)
+            if include_details else []
+        )
 
         result = {
             "candidate_id": candidate.get("candidate_id"),
@@ -286,8 +334,8 @@ class CandidateScorer:
             },
             "behavioral": behavioral,
             "integrity": integrity,
-            "projected_cph_inr": cph["amount"],
-            "cph_breakdown": cph,
+            "projected_cph_inr": cph["amount"] if cph else 0,
+            "cph_breakdown": cph or {},
             "notice_period_days": int(signals.get("notice_period_days", 0) or 0),
             "response_rate": round(float(signals.get("recruiter_response_rate", 0) or 0), 3),
             "open_to_work": bool(signals.get("open_to_work_flag")),
@@ -306,8 +354,32 @@ class CandidateScorer:
                 "relevant_product_role_count": len(relevant_product_roles),
                 "transferable_system_fit": round(transferable_system_fit, 3),
             },
+            "_explain_context": {
+                "production_hits": production_hits,
+                "relevant_product_roles": len(relevant_product_roles),
+            },
             "disqualified": not integrity["passed"],
         }
+        return result
+
+    def enrich_result(self, result: dict[str, Any], job: dict[str, Any]) -> dict[str, Any]:
+        """Add expensive recruiter-facing details only for retained shortlist rows."""
+        context = result.get("_explain_context", {})
+        cph = self._cost_per_hire(result["redrob_signals"], job)
+        result["projected_cph_inr"] = cph["amount"]
+        result["cph_breakdown"] = cph
+        result["reasoning"] = self._reasoning(
+            str(result["candidate_id"]), result["profile"], result["redrob_signals"],
+            result["components"], result["matched_requirements"],
+            result["missing_requirements"], bool(result["services_only"]),
+            result["integrity"], list(context.get("production_hits", [])),
+            int(context.get("relevant_product_roles", 0)),
+        )
+        result["interview_questions"] = self._questions(
+            result["profile"], result["matched_requirements"],
+            result["missing_requirements"],
+        )
+        result.pop("_explain_context", None)
         return result
 
     @staticmethod
@@ -322,16 +394,28 @@ class CandidateScorer:
         offer = 0.62 if offer_raw < 0 else _clamp(offer_raw)
         completeness = _clamp(float(signals.get("profile_completeness_score", 50) or 50) / 100)
         verified = sum(bool(signals.get(field)) for field in ("verified_email", "verified_phone", "linkedin_connected")) / 3
+        notice = int(signals.get("notice_period_days", 60) or 60)
+        if notice <= 30:
+            notice_factor = 1.00
+        elif notice <= 60:
+            notice_factor = 0.96
+        elif notice <= 90:
+            notice_factor = 0.90
+        else:
+            notice_factor = 0.78
         quality = (
             response * 0.24 + response_speed * 0.08 + active * 0.15 + open_to_work * 0.16
             + interview * 0.17 + offer * 0.08 + completeness * 0.07 + verified * 0.05
         )
         availability = response * 0.35 + active * 0.25 + open_to_work * 0.25 + interview * 0.15
         ranking_quality = quality * 0.65 + availability * 0.35
+        base_multiplier = min(1.08, 0.52 + ranking_quality * 0.66)
         return {
             "quality": round(quality, 3),
             "ranking_quality": round(ranking_quality, 3),
-            "multiplier": round(min(1.08, 0.52 + ranking_quality * 0.66), 3),
+            "multiplier": round(base_multiplier * notice_factor, 3),
+            "base_multiplier": round(base_multiplier, 3),
+            "notice_factor": notice_factor,
             "availability_score": round(availability * 100, 1),
             "last_active_score": round(active * 100, 1),
             "response_score": round(response * 100, 1),
@@ -384,20 +468,57 @@ class CandidateScorer:
             strength = "limited direct evidence for the core retrieval requirements"
         delivery = ", ".join(production_hits[:2]) if production_hits else "no explicit production marker"
         role_label = "role" if relevant_product_roles == 1 else "roles"
+        product_fragment = (
+            f"{relevant_product_roles} relevant product {role_label}"
+            if relevant_product_roles
+            else "limited direct product-system history"
+        )
         templates = (
             f"{role} at {company} brings {years:g} years of experience. The clearest match is {strength}; "
-            f"the record includes {relevant_product_roles} relevant product {role_label} and {delivery}.",
-            f"For Redrob's ranking mandate, {strength} is the strongest evidence in this {years:g}-year profile. "
-            f"{role} at {company} also shows {delivery} across {relevant_product_roles} relevant product {role_label}.",
-            f"This profile connects {strength} with {delivery}. Its {years:g}-year path includes "
-            f"{relevant_product_roles} relevant product {role_label}, currently as {role} at {company}.",
-            f"The fit rests on {strength}, backed by {delivery}. {role} at {company} has {years:g} years overall "
-            f"and {relevant_product_roles} relevant product {role_label}.",
-            f"Across {relevant_product_roles} relevant product {role_label}, this candidate shows {strength} and "
-            f"{delivery}. The current position is {role} at {company}, with {years:g} years total experience.",
+            f"the record adds {product_fragment} and {delivery}.",
+            f"{strength} is the strongest Senior AI Engineer signal in this {years:g}-year profile. "
+            f"{role} at {company} also shows {delivery}, with {product_fragment}.",
+            f"This profile connects {strength} with {delivery}. Its {years:g}-year path currently lands at "
+            f"{company} as {role} and shows {product_fragment}.",
+            f"{role} at {company} stands out through {strength}. The {years:g}-year career record pairs "
+            f"{delivery} with {product_fragment}.",
+            f"Recruiter-facing evidence starts with {strength}. {company}'s {role} profile has {years:g} "
+            f"years overall, {delivery}, and {product_fragment}.",
+            f"The ranking case is built on {strength}, not title alone. {role} at {company} has "
+            f"{years:g} years of experience plus {product_fragment} and {delivery}.",
+            f"Career trajectory is relevant because {role} at {company} combines {strength} with "
+            f"{delivery}. Total experience is {years:g} years and product context is {product_fragment}.",
+            f"For a founding Senior AI Engineer role, {strength} is the key match. {role} at {company} "
+            f"adds {years:g} years of experience, {delivery}, and {product_fragment}.",
+            f"The strongest grounded signal is {strength}. In {years:g} years, this {company} {role} "
+            f"profile also shows {delivery} and {product_fragment}.",
+            f"Evidence quality is led by {strength}. Current work as {role} at {company} sits inside a "
+            f"{years:g}-year path with {delivery} and {product_fragment}.",
+            f"{company}'s {role} profile is shortlisted because {strength} is backed by {delivery}. "
+            f"The career span is {years:g} years with {product_fragment}.",
+            f"The profile's practical AI/search fit comes from {strength}. {role} at {company} has "
+            f"{years:g} years total and {product_fragment}; delivery markers include {delivery}.",
+            f"Shortlist evidence for {role} at {company} centers on {strength}. The profile shows "
+            f"{years:g} years of work, {delivery}, and {product_fragment}.",
+            f"{years:g} years at this level matter because {company}'s {role} record includes "
+            f"{strength}, {delivery}, and {product_fragment}.",
+            f"The candidate's strongest verifiable thread is {strength}. Current title is {role} at "
+            f"{company}, with {years:g} years and {product_fragment}.",
+            f"Ranking confidence comes from {strength} plus delivery markers ({delivery}). "
+            f"{role} at {company} brings {years:g} years and {product_fragment}.",
+            f"The role match is strongest where {strength} intersects with {delivery}. {company} "
+            f"lists this candidate as {role}, with {years:g} years and {product_fragment}.",
+            f"Evidence is not just keyword overlap: {strength} is paired with {delivery}. The profile "
+            f"is a {years:g}-year {role} at {company} with {product_fragment}.",
+            f"{role} at {company} earns this position through {strength}. The career record spans "
+            f"{years:g} years and includes {product_fragment} plus {delivery}.",
+            f"The practical hiring signal is {strength}, supported by {delivery}. {company}'s {role} "
+            f"profile has {years:g} years overall and {product_fragment}.",
         )
         template_index = sum(ord(character) for character in candidate_id) % len(templates)
         first = templates[template_index]
+        if relevant_product_roles == 0:
+            first += " This is capped below product-system candidates because direct product evidence is thin."
 
         response = round(float(signals.get("recruiter_response_rate", 0) or 0) * 100)
         notice = int(signals.get("notice_period_days", 0) or 0)
@@ -409,6 +530,8 @@ class CandidateScorer:
             concerns.append(f"{notice}-day notice")
         if response < 25:
             concerns.append(f"{response}% recruiter response rate")
+        if not relevant_product_roles:
+            concerns.append("limited direct product-system evidence")
         if services_only:
             concerns.append("services-only career history")
         if integrity.get("flags"):
@@ -468,7 +591,7 @@ class RankingService:
 
         for candidate in self.repository.iter_candidates(scope, max_candidates):
             processed += 1
-            evaluation = self.scorer.evaluate(candidate, job)
+            evaluation = self.scorer.evaluate(candidate, job, include_details=False)
             if evaluation["disqualified"]:
                 risk = evaluation["integrity"]["risk_score"]
                 risk_band = "Critical (80-100%)" if risk >= 0.8 else "High (60-79%)"
@@ -500,6 +623,7 @@ class RankingService:
         results = [entry[2] for entry in heap]
         results.sort(key=lambda item: (-item["score"], item["candidate_id"]))
         for index, item in enumerate(results, 1):
+            self.scorer.enrich_result(item, job)
             item["rank"] = index
             item["status"] = "Shortlisted" if index <= 10 else "Interview" if index <= 30 else "Screened"
             self.repository.remember({
