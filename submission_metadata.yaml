@@ -25,7 +25,7 @@ team_members:
     role: "Frontend"
 
 github_repo: "https://github.com/Zian-Surani/crest-redrob-candidate-intelligence"
-sandbox_link: "TODO-hosted-sandbox-url"
+sandbox_link: "https://weenytype-crest-redrob-candidate-intelligence.hf.space"
 reproduce_command: "python rank.py --candidates ./candidates.jsonl --job-description ./job_description.docx --artifact-dir ./backend/data/embeddings --out ./submission.csv"
 
 compute:

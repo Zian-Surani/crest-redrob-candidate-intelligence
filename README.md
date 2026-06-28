@@ -1,3 +1,15 @@
+---
+title: Crest Redrob Candidate Intelligence
+emoji: 🔥
+colorFrom: green
+colorTo: gray
+sdk: docker
+app_port: 7860
+pinned: false
+license: mit
+short_description: 'CREST: explainable AI candidate ranking and analytics'
+---
+
 # CREST
 
 CREST (Candidate Reliability & Evidence-based Scoring Technology) is a recruiter-facing SaaS web application built for the Redrob Intelligent Candidate Discovery & Ranking Challenge.
