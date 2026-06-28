@@ -8,6 +8,18 @@ from app.services.jd_parser import parse_job
 from app.services.scoring import CandidateScorer, _skill_name_matches
 
 
+def _snapshot_candidate() -> dict:
+    snapshot_path = Path(__file__).resolve().parents[1] / "data" / "sandbox" / "ranking_snapshot.json"
+    result = json.loads(snapshot_path.read_text(encoding="utf-8"))["results"][0]
+    return {
+        "candidate_id": result["candidate_id"],
+        "profile": result["profile"],
+        "career_history": result["career_history"],
+        "skills": result["skills"],
+        "redrob_signals": result["redrob_signals"],
+    }
+
+
 def test_job_parser_finds_core_redrob_requirements():
     parsed = parse_job(
         "We absolutely need Python, production embeddings, vector search with FAISS, and NDCG evaluation. 5-9 years.",
@@ -35,12 +47,8 @@ def test_integrity_flags_impossible_expert_duration():
     assert report["flags"]
 
 
-def test_sample_candidate_scoring_is_deterministic():
-    data_root = Path(__file__).resolve().parents[1] / "data"
-    sample_path = next(
-        path for path in data_root.rglob("sample_candidates.json") if "__MACOSX" not in path.parts
-    )
-    candidate = json.loads(sample_path.read_text(encoding="utf-8"))[0]
+def test_snapshot_candidate_scoring_is_deterministic():
+    candidate = _snapshot_candidate()
     description = "Senior AI Engineer. Need Python, embeddings, vector search, NDCG. 5-9 years. Pune, India."
     job = {
         "description": description, "title": "Senior AI Engineer", "location": "Pune, India",
@@ -80,11 +88,7 @@ def test_integrity_rejects_declared_experience_contradiction():
 
 
 def test_behavioral_multiplier_is_applied_to_final_score():
-    data_root = Path(__file__).resolve().parents[1] / "data"
-    sample_path = next(
-        path for path in data_root.rglob("sample_candidates.json") if "__MACOSX" not in path.parts
-    )
-    candidate = json.loads(sample_path.read_text(encoding="utf-8"))[0]
+    candidate = _snapshot_candidate()
     description = "Senior AI Engineer. Need Python, embeddings, vector search, NDCG. 5-9 years. Pune, India."
     job = {
         "description": description, "title": "Senior AI Engineer", "location": "Pune, India",

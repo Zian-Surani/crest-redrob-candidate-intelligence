@@ -74,7 +74,7 @@ export default function Login() {
             onClick={() => navigate("/dashboard")}
             className="w-full mt-4 text-xs font-bold text-slate-400 hover:text-primary"
           >
-            Continue in local demo mode
+            Continue to review dashboard
           </button>
         </div>
       </div>

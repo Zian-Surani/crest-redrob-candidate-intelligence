@@ -62,6 +62,6 @@ python -m app.audit --output-dir data --integrity-sample-size 50
 
 ## Database decision
 
-The competition ranker does not require a database: it streams the official JSONL and keeps only the top-K heap in memory. SQLite is used for the SaaS shell—users, jobs, persisted rankings, and analytics events—so the local demo works without infrastructure.
+The competition ranker does not require a database: it streams the official JSONL and keeps only the top-K heap in memory. SQLite is used for the SaaS shell—users, jobs, persisted rankings, and analytics events—so the local review workspace works without infrastructure.
 
 MongoDB is optional for a hosted multi-tenant product. If introduced, store nested candidate documents and audit/event documents in MongoDB, while keeping ranking execution independent from database availability. MongoDB uses collections and indexes, not SQL tables. Do not migrate solely for the hackathon; it adds deployment and reproduction risk without improving NDCG.

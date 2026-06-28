@@ -12,14 +12,13 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     CREST_DATA_DIR=/app/data \
     CREST_DATABASE_PATH=/app/data/crest.db \
     CREST_FRONTEND_DIST=/app/frontend_dist \
-    CREST_BOOTSTRAP_DEMO=false \
+    CREST_BOOTSTRAP_SAMPLE=false \
     CREST_OLLAMA_ENABLED=false \
     CREST_SEMANTIC_ENABLED=false
 WORKDIR /app
-COPY backend/requirements-demo.txt ./requirements.txt
+COPY backend/requirements-runtime.txt ./requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 COPY backend/app ./app
-COPY backend/data/demo ./data/demo
 COPY backend/data/sandbox/ ./data/
 COPY --from=frontend-build /build/frontend/dist ./frontend_dist
 RUN useradd --create-home --uid 1000 crest && chown -R crest:crest /app

@@ -12,12 +12,12 @@ The codebase is clean for the private GitHub handoff. The final source tree cont
 - Frontend: ESLint, the Vite production build, and the Playwright UI regression suite passed.
 - Browser regression: landing WebGL health, all Analytics tabs and chart containment, current handoff copy, and fully loaded Pipeline columns passed at 1478x1000 and 1280x800 viewports.
 - Frontend dependencies: `npm audit --omit=dev` found no known vulnerabilities.
-- Python demo and full manifests: `pip-audit` found no known vulnerabilities after upgrading to FastAPI 0.138.0, Starlette 1.3.1, Uvicorn 0.49.0, Pydantic 2.13.4, and pytest 9.0.3.
+- Python runtime and full manifests: `pip-audit` found no known vulnerabilities after upgrading to FastAPI 0.138.0, Starlette 1.3.1, Uvicorn 0.49.0, Pydantic 2.13.4, and pytest 9.0.3.
 - Submission: the organizer validator reports `Submission is valid.`
 - Full ranking: 100,000 processed, 580 excluded, 100 ranked, 201.522 seconds.
 - Automated ranking audit: every check in `backend/data/automated_audit_report.json` passes.
-- Docker: the 89.5 MB local image served the frontend, health API, analytics, and the official 50-candidate sample ranking.
-- Staged Git content: whitespace and secret scans passed; the staged source was under 1 MB excluding the official demo sample and generated artifacts.
+- Docker: the local image served the frontend, health API, analytics, and the persisted full-run ranking snapshot with 100,000 processed candidates.
+- Staged Git content: whitespace and secret scans passed; the staged source excludes placeholder candidate data and includes the sanitized full-run sandbox artifacts.
 
 ## Remote verification
 

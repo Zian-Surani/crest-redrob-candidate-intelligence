@@ -124,7 +124,7 @@ async def lifespan(_: FastAPI):
     try:
         _seed_ranking_snapshot()
         job = _seed_default_job()
-        if settings.bootstrap_demo and not store.latest_ranking():
+        if settings.bootstrap_sample and not store.latest_ranking():
             outcome = ranking_service.run(job, "sample", limit=50)
             store.save_ranking({"job_id": job["id"], "scope": "sample", **outcome})
     except DatasetNotFoundError:
@@ -167,6 +167,28 @@ def _latest_or_404() -> dict[str, Any]:
         raise HTTPException(status_code=404, detail="No ranking has been run yet.")
     ranking["job"] = store.get_job(ranking["job_id"])
     return ranking
+
+
+def _dataset_status() -> tuple[dict[str, Any], str]:
+    try:
+        dataset = repository.stats()
+        dataset_status = "ready"
+    except DatasetNotFoundError as exc:
+        dataset = {"error": str(exc)}
+        dataset_status = "missing"
+
+    latest = store.latest_ranking()
+    if latest and latest.get("scope") == "full" and latest.get("processed_count") == 100_000:
+        dataset = {
+            **dataset,
+            "dataset_mode": "persisted_full_ranking_snapshot",
+            "candidate_count": latest["processed_count"],
+            "ranking_id": latest["id"],
+            "ranking_rows": len(latest["results"]),
+            "raw_candidates_jsonl_available": bool(dataset.get("full_available")),
+        }
+        dataset_status = "ready"
+    return dataset, dataset_status
 
 
 def _result_or_404(candidate_id: str) -> tuple[dict[str, Any], dict[str, Any]]:
@@ -259,23 +281,7 @@ def _submission_readiness(ranking: dict[str, Any]) -> dict[str, Any]:
 
 @app.get("/api/health")
 def health() -> dict[str, Any]:
-    try:
-        dataset = repository.stats()
-        dataset_status = "ready"
-    except DatasetNotFoundError as exc:
-        dataset = {"error": str(exc)}
-        dataset_status = "missing"
-    latest = store.latest_ranking()
-    if latest and latest.get("scope") == "full" and latest.get("processed_count") == 100_000:
-        dataset = {
-            **dataset,
-            "dataset_mode": "persisted_full_ranking_snapshot",
-            "candidate_count": latest["processed_count"],
-            "ranking_id": latest["id"],
-            "ranking_rows": len(latest["results"]),
-            "raw_candidates_jsonl_available": bool(dataset.get("full_available")),
-        }
-        dataset_status = "ready"
+    dataset, dataset_status = _dataset_status()
     return {
         "status": "ok" if dataset_status == "ready" else "degraded",
         "service": settings.app_name,
@@ -343,17 +349,17 @@ def me(user: dict[str, Any] | None = Depends(current_user)) -> dict[str, Any]:
     if not user:
         return {
             "id": 0, "first_name": "Zian", "last_name": "Surani",
-            "email": "demo@crest.local", "company": "CREST Demo", "demo": True,
+            "email": "review@crest.local", "company": "CREST Review", "review_session": True,
         }
-    return {**_public_user(user), "demo": False}
+    return {**_public_user(user), "review_session": False}
 
 
 @app.get("/api/dataset/stats")
 def dataset_stats() -> dict[str, Any]:
-    try:
-        return repository.stats()
-    except DatasetNotFoundError as exc:
-        raise HTTPException(status_code=503, detail=str(exc))
+    dataset, dataset_status = _dataset_status()
+    if dataset_status != "ready":
+        raise HTTPException(status_code=503, detail=dataset.get("error", "Dataset unavailable"))
+    return dataset
 
 
 @app.get("/api/jobs")

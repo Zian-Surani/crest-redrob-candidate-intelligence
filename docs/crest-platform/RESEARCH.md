@@ -29,4 +29,4 @@ The official JSONL is the source of truth. Missing `offer_acceptance_rate` and G
 - Honeypots: calibrated critical/high integrity boundary and visible evidence.
 - Hallucinated reasoning: deterministic profile-derived sentences only.
 - Memory/runtime: heap-based top-K selection and JSONL streaming.
-- Demo fragility: sample ranking bootstraps the first run; full mode uses the same code path.
+- Snapshot fragility: hosted review mode seeds the verified full run; local full mode uses the same deterministic ranking code path when the official JSONL is mounted.

@@ -82,15 +82,15 @@ The local AI profiles are configured as:
 
 Qwen never changes candidate scores or ranks.
 
-## Small-sample Docker sandbox
+## Full-run Docker sandbox
 
-The container bundles the React production build, FastAPI, and the official 50-candidate sample:
+The container bundles the React production build, FastAPI, and the persisted official 100,000-candidate ranking snapshot:
 
 ```powershell
 docker build -t crest-redrob .
 docker run --rm -p 7860:7860 crest-redrob
 ```
 
-Open `http://localhost:7860`. This is the same single-container shape intended for a Hugging Face Docker Space. The full 100K dataset and local embedding artifact are intentionally excluded from the demo image.
+Open `http://localhost:7860`. This is the same single-container shape intended for the Hugging Face Docker Space. The raw 100K JSONL and local embedding artifact are intentionally excluded from the public image; the shipped sandbox serves the verified full-run ranking snapshot, submission CSV, and audit exports only. No placeholder candidate dataset is copied into the image.
 
-Verified locally on 24 June 2026: the 89.7 MB image became healthy, served the React app, ranked all 50 bundled candidates, returned analytics, and served both review CSV downloads.
+Verified locally on 28 June 2026: the image became healthy, served the React app, loaded ranking id 19 from the full-run snapshot, reported 100,000 processed candidates, returned analytics, and served review CSV downloads.

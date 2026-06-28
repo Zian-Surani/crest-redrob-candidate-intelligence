@@ -15,7 +15,7 @@
 - Responsive Analytics and Pipeline layouts with browser regression coverage at 1478x1000 and 1280x800
 - Human top-50 calibration and blind ten-row reasoning-review sheets
 - Passing automated audit of all 100 explanations, top-50 relevance, and 50 integrity exclusions
-- Verified 89.7 MB single-container Docker sandbox using the official 50-candidate sample
+- Verified single-container Docker sandbox using the persisted 100,000-candidate full-run snapshot
 - Root submission metadata scaffold and exact reproduction commands
 - Private `Zian-Surani/crest-redrob-candidate-intelligence` repository with verified `main` tree and authorship
 

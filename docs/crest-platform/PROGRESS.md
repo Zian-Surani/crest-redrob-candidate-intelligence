@@ -24,7 +24,7 @@ Status: Completed. The calibrated hybrid full pool processes in 201.522 seconds 
 
 ### Phase 5: Operational handoff
 
-Status: Engineering completed. Eleven backend tests and frontend lint/build pass. The 89.7 MB Docker image was exercised end to end against the bundled 50-candidate sample: health, frontend, ranking, analytics, and review downloads all returned successfully. Automated top-50, 100-row reasoning, and stratified integrity audits pass; public deployment and final human signoff remain team-owned submission actions.
+Status: Engineering completed. Backend tests and frontend lint/build pass. The Docker image was exercised end to end against the persisted 100,000-candidate full-run snapshot: health, frontend, analytics, and review downloads all returned successfully. Automated top-50, 100-row reasoning, and stratified integrity audits pass; public deployment and final human signoff remain team-owned submission actions.
 
 ## Architectural Decisions
 

@@ -107,14 +107,20 @@ class CandidateRepository:
         if cached:
             return cached
 
-        for candidate in self.iter_candidates("sample"):
-            if candidate.get("candidate_id") == candidate_id:
-                return candidate
+        try:
+            for candidate in self.iter_candidates("sample"):
+                if candidate.get("candidate_id") == candidate_id:
+                    return candidate
+        except DatasetNotFoundError:
+            pass
 
-        for candidate in self.iter_candidates("full"):
-            if candidate.get("candidate_id") == candidate_id:
-                self.remember(candidate)
-                return candidate
+        try:
+            for candidate in self.iter_candidates("full"):
+                if candidate.get("candidate_id") == candidate_id:
+                    self.remember(candidate)
+                    return candidate
+        except DatasetNotFoundError:
+            pass
         return None
 
     def stats(self) -> dict[str, Any]:
@@ -125,7 +131,10 @@ class CandidateRepository:
             full_available = True
         except DatasetNotFoundError:
             pass
-        sample_count = sum(1 for _ in self.iter_candidates("sample"))
+        try:
+            sample_count = sum(1 for _ in self.iter_candidates("sample"))
+        except DatasetNotFoundError:
+            sample_count = 0
         return {
             "name": "Redrob India Data & AI Challenge",
             "full_available": full_available,

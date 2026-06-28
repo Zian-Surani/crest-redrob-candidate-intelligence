@@ -168,7 +168,7 @@ function Overview({ data }) {
       <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,3fr)_minmax(360px,2fr)] gap-6">
         <ChartCard
           title="Ranking run history"
-          subtitle="Average match across persisted sample and full runs."
+          subtitle="Average match across persisted full-ranking runs."
         >
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={data?.history || []}>

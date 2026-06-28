@@ -7,7 +7,7 @@ import { initials } from "../lib/api";
 export default function Layout() {
   const { data: user } = useApi("/auth/me", {
     first_name: "Zian",
-    company: "CREST Demo",
+    company: "CREST Review",
   });
   const [search, setSearch] = useState("");
 
@@ -67,7 +67,7 @@ export default function Layout() {
             >
               <div className="flex items-center space-x-1">
                 <span className="text-[13px] font-semibold text-slate-700">
-                  {user?.company || "CREST Demo"}
+                  {user?.company || "CREST Review"}
                 </span>
                 <span className="material-symbols-outlined text-[16px] text-slate-400">
                   expand_more

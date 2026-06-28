@@ -32,7 +32,7 @@ class Settings:
     )
     token_secret: str = os.getenv("CREST_TOKEN_SECRET", "local-development-secret-change-me")
     token_ttl_seconds: int = int(os.getenv("CREST_TOKEN_TTL_SECONDS", "86400"))
-    bootstrap_demo: bool = _bool_env("CREST_BOOTSTRAP_DEMO", False)
+    bootstrap_sample: bool = _bool_env("CREST_BOOTSTRAP_SAMPLE", False)
     ollama_enabled: bool = _bool_env("CREST_OLLAMA_ENABLED", True)
     ollama_url: str = os.getenv("CREST_OLLAMA_URL", "http://127.0.0.1:11434")
     ollama_model: str = os.getenv("CREST_OLLAMA_MODEL", "qwen2.5-coder:7b")
