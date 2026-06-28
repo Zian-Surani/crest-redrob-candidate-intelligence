@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import csv
 import io
+import json
 import os
 import random
 import sqlite3
@@ -85,10 +86,43 @@ def _seed_default_job() -> dict[str, Any]:
     return store.create_job(payload)
 
 
+def _seed_ranking_snapshot() -> None:
+    """Load the public sandbox's sanitized full-run snapshot into SQLite."""
+    snapshot_path = settings.data_dir / "ranking_snapshot.json"
+    if store.latest_ranking() or not snapshot_path.exists():
+        return
+    payload = json.loads(snapshot_path.read_text(encoding="utf-8"))
+    job = payload["job"]
+    with store.connect() as connection:
+        connection.execute(
+            """INSERT OR IGNORE INTO jobs
+            (id,title,company,location,description,salary_min_lpa,salary_max_lpa,parsed_json,status,created_at)
+            VALUES (?,?,?,?,?,?,?,?,?,?)""",
+            (
+                job["id"], job["title"], job["company"], job["location"],
+                job["description"], job["salary_min_lpa"], job["salary_max_lpa"],
+                json.dumps(job["parsed"]), job.get("status", "Active"), job["created_at"],
+            ),
+        )
+        connection.execute(
+            """INSERT OR IGNORE INTO rankings
+            (id,job_id,scope,status,processed_count,duration_seconds,results_json,metrics_json,created_at)
+            VALUES (?,?,?,?,?,?,?,?,?)""",
+            (
+                payload["id"], job["id"], payload["scope"],
+                payload.get("status", "Completed"), payload["processed_count"],
+                payload["duration_seconds"], json.dumps(payload["results"]),
+                json.dumps(payload["metrics"]), payload["created_at"],
+            ),
+        )
+        connection.commit()
+
+
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     store.initialize()
     try:
+        _seed_ranking_snapshot()
         job = _seed_default_job()
         if settings.bootstrap_demo and not store.latest_ranking():
             outcome = ranking_service.run(job, "sample", limit=50)
