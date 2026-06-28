@@ -85,9 +85,7 @@ export default function Login() {
 function Brand() {
   return (
     <Link to="/" className="flex items-center space-x-3 mb-12">
-      <div className="w-8 h-8 bg-primary rounded-xl flex items-center justify-center shadow-soft">
-        <span className="text-white font-bold text-xl">C</span>
-      </div>
+      <img src="/favicon.svg" alt="CREST" className="w-8 h-8 object-contain drop-shadow-sm" />
       <span className="font-headline font-bold text-xl tracking-tight text-slate-900">
         CREST
       </span>

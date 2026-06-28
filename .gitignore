@@ -19,6 +19,7 @@ backend/data/*.db
 backend/data/*.db-*
 backend/data/sample_ranked.csv
 backend/data/embeddings*/
+backend/data/review_backups/
 .env
 .env.*
 !.env.example

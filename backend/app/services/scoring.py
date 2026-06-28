@@ -100,6 +100,21 @@ def _display_hits(hits: list[str]) -> str:
     return ", ".join(dict.fromkeys(rendered))
 
 
+def _fallback_evidence(requirement: str, source: str) -> str:
+    """Describe inferred evidence without exposing parser hit lists."""
+    categories = {
+        "Python engineering": "Python/ML framework usage",
+        "Embeddings & semantic retrieval": "semantic retrieval work",
+        "Vector & hybrid search": "vector or hybrid search work",
+        "Ranking evaluation": "ranking evaluation work",
+        "Backend/API productionization": "backend productionization work",
+    }
+    category = categories.get(requirement, f"{requirement.lower()} work")
+    if source == "career":
+        return f"career-history evidence for {category}"
+    return f"profile-summary evidence for {category}"
+
+
 class CandidateScorer:
     def __init__(self, semantic: SemanticScorer | None = None):
         self.semantic = semantic
@@ -221,23 +236,28 @@ class CandidateScorer:
                     f"{best.get('name')} - {best.get('duration_months', 0)} months - "
                     f"{best.get('proficiency', 'listed')}"
                 )
+                inferred_evidence = False
             elif career_hits:
                 depth = min(0.92, 0.58 + 0.08 * len(career_hits))
                 status = "semantic"
-                evidence = f"{_display_hits(career_hits[:3])} in career project descriptions"
+                evidence = _fallback_evidence(group, "career")
+                inferred_evidence = True
             elif text_hits:
                 depth = 0.38
                 status = "semantic"
-                evidence = f"{_display_hits(text_hits[:2])} in profile text"
+                evidence = _fallback_evidence(group, "profile")
+                inferred_evidence = True
             else:
                 depth = 0.0
                 status = "missing"
                 evidence = "Not evidenced in profile"
+                inferred_evidence = False
                 missing_requirements.append(group)
             requirement_scores.append(depth)
             matched_requirements.append({
                 "requirement": group, "status": status, "evidence": evidence,
                 "score": round(depth * 100, 1),
+                "inferred_evidence": inferred_evidence,
             })
         skill_score = 25 * (sum(requirement_scores) / max(1, len(requirement_scores)))
         components["skill_depth"] = round(skill_score, 2)
@@ -300,7 +320,9 @@ class CandidateScorer:
             # remain in the shortlist, but should not occupy the top band that
             # hidden NDCG@10 will likely reserve for candidates meeting the floor.
             shortfall = minimum - years
-            final_score = min(final_score, 83.8 - max(0.0, shortfall - 1.0) * 7.0)
+            base_cap = 95.0
+            penalty_per_year_short = 11.2
+            final_score = min(final_score, base_cap - shortfall * penalty_per_year_short)
             final_score = round(max(0.0, final_score), 3)
 
         cph = self._cost_per_hire(signals, job) if include_details else None
@@ -479,7 +501,10 @@ class CandidateScorer:
         evidenced = [item for item in requirements if item["status"] != "missing"]
         strongest = max(evidenced, key=lambda item: item["score"], default=None)
         if strongest:
-            strength = f"{strongest['requirement']} via {strongest['evidence']}"
+            if strongest.get("inferred_evidence"):
+                strength = f"{strongest['requirement']} support from {strongest['evidence']}"
+            else:
+                strength = f"{strongest['requirement']} via {strongest['evidence']}"
         else:
             strength = "limited direct evidence for the core retrieval requirements"
         delivery = ", ".join(production_hits[:2]) if production_hits else "no explicit production marker"

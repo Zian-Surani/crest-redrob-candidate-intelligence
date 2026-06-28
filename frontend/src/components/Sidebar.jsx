@@ -32,11 +32,7 @@ export default function Sidebar() {
     <aside className="fixed left-6 top-6 bottom-6 w-[280px] bg-white border border-slate-200/60 rounded-premium shadow-premium flex flex-col z-50 overflow-hidden">
       <div className="h-20 flex items-center px-8 border-b border-slate-100">
         <div className="flex items-center space-x-3">
-          <div className="w-8 h-8 bg-primary rounded-xl flex items-center justify-center shadow-soft">
-            <span className="text-white font-bold tracking-tighter text-xl">
-              C
-            </span>
-          </div>
+          <img src="/favicon.svg" alt="CREST" className="w-8 h-8 object-contain drop-shadow-sm" />
           <span className="font-headline font-bold text-xl tracking-tight text-slate-900">
             CREST
           </span>

@@ -46,9 +46,7 @@ export default function Register() {
       <div className="flex-1 flex flex-col justify-center px-12 sm:px-24 lg:px-32 bg-white shadow-2xl">
         <div className="w-full max-w-md mx-auto">
           <Link to="/" className="flex items-center space-x-3 mb-10">
-            <div className="w-8 h-8 bg-primary rounded-xl flex items-center justify-center">
-              <span className="text-white font-bold text-xl">C</span>
-            </div>
+            <img src="/favicon.svg" alt="CREST" className="w-8 h-8 object-contain drop-shadow-sm" />
             <span className="font-bold text-xl text-slate-900">CREST</span>
           </Link>
           <h2 className="text-3xl font-bold text-slate-900 mb-2">

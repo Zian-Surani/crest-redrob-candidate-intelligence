@@ -20,9 +20,7 @@ function Navbar() {
       <div className="mx-auto max-w-6xl px-4 py-4">
         <div className="flex items-center justify-between rounded-xl bg-white/60 backdrop-blur-xl border border-slate-200/50 px-5 py-3 shadow-sm">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-white shadow-sm overflow-hidden">
-              <span className="font-bold tracking-tighter text-xl">C</span>
-            </div>
+            <img src="/favicon.svg" alt="CREST" className="w-10 h-10 object-contain drop-shadow-sm" />
             <span className="font-headline text-xl font-bold tracking-wider text-slate-900">
               CREST
             </span>
