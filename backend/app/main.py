@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import csv
 import io
+import os
 import random
 import sqlite3
 from contextlib import asynccontextmanager
@@ -11,8 +12,9 @@ from typing import Any
 from docx import Document
 from fastapi import Depends, FastAPI, Header, HTTPException, Query, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.auth import create_token, decode_token, hash_password, verify_password
 from app.challenge import challenge_requirements
@@ -45,7 +47,19 @@ ollama = OllamaService(
     settings.ollama_url, settings.ollama_enabled,
     settings.ollama_fast_model, settings.ollama_deep_model,
 )
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
+PROJECT_ROOT = Path(os.getenv("CREST_PROJECT_ROOT", str(Path(__file__).resolve().parents[2])))
+
+
+class SPAStaticFiles(StaticFiles):
+    """Serve index.html for client-side React routes such as /dashboard."""
+
+    async def get_response(self, path: str, scope: dict[str, Any]):
+        try:
+            return await super().get_response(path, scope)
+        except StarletteHTTPException as exc:
+            if exc.status_code == 404 and self.html:
+                return await super().get_response("index.html", scope)
+            raise
 
 
 def _read_docx(path: Any) -> str:
@@ -217,6 +231,17 @@ def health() -> dict[str, Any]:
     except DatasetNotFoundError as exc:
         dataset = {"error": str(exc)}
         dataset_status = "missing"
+    latest = store.latest_ranking()
+    if latest and latest.get("scope") == "full" and latest.get("processed_count") == 100_000:
+        dataset = {
+            **dataset,
+            "dataset_mode": "persisted_full_ranking_snapshot",
+            "candidate_count": latest["processed_count"],
+            "ranking_id": latest["id"],
+            "ranking_rows": len(latest["results"]),
+            "raw_candidates_jsonl_available": bool(dataset.get("full_available")),
+        }
+        dataset_status = "ready"
     return {
         "status": "ok" if dataset_status == "ready" else "degraded",
         "service": settings.app_name,
@@ -388,6 +413,14 @@ def export_ranking(ranking_id: int) -> StreamingResponse:
 
 @app.get("/api/review/top50.csv")
 def export_human_review() -> StreamingResponse:
+    artifact = settings.data_dir / "manual_review_top50.csv"
+    if artifact.exists():
+        store.track_event("human_review_exported", {"source": "completed_artifact"})
+        return FileResponse(
+            artifact,
+            media_type="text/csv",
+            filename="crest-human-review-top50.csv",
+        )
     ranking = _latest_or_404()
     output = io.StringIO()
     fields = [
@@ -418,6 +451,14 @@ def export_human_review() -> StreamingResponse:
 
 @app.get("/api/review/reasoning-sample.csv")
 def export_reasoning_review() -> StreamingResponse:
+    artifact = settings.data_dir / "reasoning_audit_10.csv"
+    if artifact.exists():
+        store.track_event("reasoning_review_exported", {"source": "completed_artifact"})
+        return FileResponse(
+            artifact,
+            media_type="text/csv",
+            filename="crest-reasoning-review-10.csv",
+        )
     ranking = _latest_or_404()
     selected = random.Random(20260623).sample(
         ranking["results"], min(10, len(ranking["results"]))
@@ -630,4 +671,4 @@ def ai_status() -> dict[str, Any]:
 
 
 if settings.frontend_dist.exists():
-    app.mount("/", StaticFiles(directory=settings.frontend_dist, html=True), name="frontend")
+    app.mount("/", SPAStaticFiles(directory=settings.frontend_dist, html=True), name="frontend")

@@ -8,10 +8,11 @@ RUN npm run build
 FROM python:3.11-slim AS runtime
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
+    CREST_PROJECT_ROOT=/app \
     CREST_DATA_DIR=/app/data \
     CREST_DATABASE_PATH=/app/data/crest.db \
     CREST_FRONTEND_DIST=/app/frontend_dist \
-    CREST_BOOTSTRAP_DEMO=true \
+    CREST_BOOTSTRAP_DEMO=false \
     CREST_OLLAMA_ENABLED=false \
     CREST_SEMANTIC_ENABLED=false
 WORKDIR /app
@@ -19,6 +20,7 @@ COPY backend/requirements-demo.txt ./requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 COPY backend/app ./app
 COPY backend/data/demo ./data/demo
+COPY backend/data/sandbox/ ./data/
 COPY --from=frontend-build /build/frontend/dist ./frontend_dist
 RUN useradd --create-home --uid 1000 crest && chown -R crest:crest /app
 USER crest
