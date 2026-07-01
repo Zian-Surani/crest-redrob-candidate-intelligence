@@ -23,6 +23,21 @@ It streams the official 100,000-candidate JSONL through four deterministic layer
 
 The React interface keeps the original light enterprise theme and adds live job parsing, ranking runs, candidate evidence panels, JD-shift comparison, flagged profiles, analytics, CSV export, local authentication, and optional Ollama-powered interview questions.
 
+## UI evidence
+
+These screenshots show that CREST is a working recruiter-facing product around the final ranking engine, not only a CSV script.
+
+| Screen | What it demonstrates |
+|:---|:---|
+| [Overview dashboard](<images/Screenshot 2026-07-01 202127.png>) | Full-run hiring intelligence: 100,000 evaluated profiles, ranked shortlist quality, top evidence matches, savings, and decision funnel. |
+| [Candidate intelligence table](<images/Screenshot 2026-07-01 202134.png>) | Recruiter search, score bands, availability, projected CPH, and ranked candidate browsing from the persisted top-100. |
+| [Candidate evidence drawer](<images/Screenshot 2026-07-01 202142.png>) | Candidate-specific explanation, score breakdown, response/notice risk, and matched evidence behind a rank. |
+| [Recruitment pipeline](<images/Screenshot 2026-07-01 202206.png>) | Auditable funnel from loaded pool to final shortlist, with pipeline-stage cards for ranked, screened, interview, and shortlisted candidates. |
+| [Submission analytics](<images/Screenshot 2026-07-01 202214.png>) | Official challenge metrics: 100,000 processed, 580 excluded, 100 ranked, runtime, throughput, and readiness score. |
+| [Hackathon readiness](<images/Screenshot 2026-07-01 202256.png>) | Crawler-friendly proof that the final artifact is validated, full-run based, handoff-ready, and not demo/sample data. |
+
+The complete screenshot index with short captions is in [images/README.md](images/README.md).
+
 ## Run locally
 
 Backend terminal:
