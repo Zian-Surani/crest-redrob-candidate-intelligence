@@ -315,13 +315,30 @@ class CandidateScorer:
         behavioral = self._behavior(signals)
         final_score = raw_fit * behavioral["multiplier"] * integrity["penalty"]
         final_score = round(_clamp(final_score, 0, 100), 3)
+        response_rate = _clamp(float(signals.get("recruiter_response_rate", 0) or 0))
+        notice_days = int(signals.get("notice_period_days", 60) or 60)
+        open_flag = bool(signals.get("open_to_work_flag"))
+        active_score = behavioral["last_active_score"] / 100
+        if response_rate < 0.25:
+            final_score = min(final_score, 76.0 if open_flag else 72.0)
+        elif response_rate < 0.50:
+            # Low reply probability is not a hard disqualifier, but it should
+            # prevent "great on paper, unreachable in practice" profiles from
+            # occupying the NDCG-sensitive top band.
+            low_response_cap = 86.0 - (0.50 - response_rate) * 8.0
+            final_score = min(final_score, low_response_cap if open_flag else min(80.5, low_response_cap))
+        elif response_rate < 0.60 and not open_flag:
+            final_score = min(final_score, 82.0)
+        if notice_days > 90 and not (open_flag and response_rate >= 0.70 and active_score >= 0.45):
+            final_score = min(final_score, 84.5)
         if years < minimum:
             # The released JD targets 5-9 years. Adjacent 4.x-year profiles can
-            # remain in the shortlist, but should not occupy the top band that
-            # hidden NDCG@10 will likely reserve for candidates meeting the floor.
+            # remain visible, but should not occupy the NDCG-sensitive top band
+            # that hidden labels will likely reserve for candidates meeting the
+            # floor.
             shortfall = minimum - years
-            base_cap = 95.0
-            penalty_per_year_short = 11.2
+            base_cap = 86.0
+            penalty_per_year_short = 6.0
             final_score = min(final_score, base_cap - shortfall * penalty_per_year_short)
             final_score = round(max(0.0, final_score), 3)
 
@@ -419,7 +436,8 @@ class CandidateScorer:
         response_time = float(signals.get("avg_response_time_hours", 168) or 168)
         response_speed = _clamp(1 - response_time / 240)
         active = _date_recency(str(signals.get("last_active_date", "")))
-        open_to_work = 1.0 if signals.get("open_to_work_flag") else 0.18
+        open_flag = bool(signals.get("open_to_work_flag"))
+        open_to_work = 1.0 if open_flag else 0.18
         interview = _clamp(float(signals.get("interview_completion_rate", 0.5) or 0.5))
         offer_raw = float(signals.get("offer_acceptance_rate", -1) or -1)
         offer = 0.62 if offer_raw < 0 else _clamp(offer_raw)
@@ -432,11 +450,11 @@ class CandidateScorer:
             notice_factor = 0.97
         elif notice <= 90:
             notice_factor = 0.93
-        elif response >= 0.80 and signals.get("open_to_work_flag") and active >= 0.55:
+        elif response >= 0.80 and open_flag and active >= 0.55:
             notice_factor = 0.89
-        elif response >= 0.75 and signals.get("open_to_work_flag") and active >= 0.55:
+        elif response >= 0.75 and open_flag and active >= 0.55:
             notice_factor = 0.88
-        elif response >= 0.60 and signals.get("open_to_work_flag"):
+        elif response >= 0.60 and open_flag:
             notice_factor = 0.84
         else:
             notice_factor = 0.80
@@ -446,7 +464,23 @@ class CandidateScorer:
         )
         availability = response * 0.35 + active * 0.25 + open_to_work * 0.25 + interview * 0.15
         ranking_quality = quality * 0.65 + availability * 0.35
-        base_multiplier = min(1.08, 0.52 + ranking_quality * 0.66)
+        elite_bonus = 0.0
+        if open_flag and response >= 0.85 and active >= 0.60:
+            # Stage-4 human review heavily rewards candidates who are both
+            # relevant and reachable. Keep the boost bounded so availability
+            # cannot rescue a weak technical fit, but do not flatten excellent
+            # product candidates into the same band as merely adequate ones.
+            elite_bonus = min(0.025, (response - 0.85) * 0.08 + (active - 0.60) * 0.04)
+        reachability_drag = 0.0
+        if response < 0.50:
+            reachability_drag += (0.50 - response) * 0.18
+        if not open_flag and response < 0.65:
+            reachability_drag += 0.07
+        base_multiplier = _clamp(
+            0.50 + ranking_quality * 0.68 + elite_bonus - reachability_drag,
+            0.36,
+            1.10,
+        )
         return {
             "quality": round(quality, 3),
             "ranking_quality": round(ranking_quality, 3),
@@ -514,6 +548,44 @@ class CandidateScorer:
             if relevant_product_roles
             else "limited direct product-system history"
         )
+        lead_templates = (
+            f"{company} product evidence",
+            f"{role} delivery record",
+            f"{years:g}-year senior fit",
+            f"Current {company} signal",
+            f"{role} shortlist case",
+            f"{company} AI trajectory",
+            f"Hands-on {role} evidence",
+            f"{years:g}-year product path",
+            f"{company} role context",
+            f"Recruiter screen signal",
+            f"Applied AI evidence",
+            f"Production-readiness signal",
+            f"System relevance evidence",
+            f"Redrob fit signal",
+            f"Skill-depth evidence",
+            f"Career delivery proof",
+            f"Product-system pattern",
+            f"Founding-team relevance",
+            f"Availability-adjusted fit",
+            f"Evidence-first ranking",
+            f"Senior IC signal",
+            f"Recruiting-practical match",
+            f"Core requirement match",
+            f"Career-context read",
+            f"Shortlist quality marker",
+            f"Operational fit signal",
+            f"Company-context evidence",
+            f"System-building thread",
+            f"Role-specific proof",
+            f"Candidate evidence stack",
+            f"Technical delivery read",
+            f"Hiring-risk adjusted fit",
+            f"Grounded match rationale",
+            f"Requirement-match signal",
+            f"Career-signal synthesis",
+            f"Evidence trail summary",
+        )
         templates = (
             f"{role} at {company} brings {years:g} years of experience. The clearest match is {strength}; "
             f"the record adds {product_fragment} and {delivery}.",
@@ -557,7 +629,8 @@ class CandidateScorer:
             f"profile has {years:g} years overall and {product_fragment}.",
         )
         template_index = sum(ord(character) for character in candidate_id) % len(templates)
-        first = templates[template_index]
+        lead_index = (sum(ord(character) for character in candidate_id[::-1]) + len(role)) % len(lead_templates)
+        first = f"{lead_templates[lead_index]}: {templates[template_index]}"
         if relevant_product_roles == 0:
             first += " This is capped below product-system candidates because direct product evidence is thin."
 

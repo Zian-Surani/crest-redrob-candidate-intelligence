@@ -177,7 +177,10 @@ class Store:
         if job_id is not None:
             query += " WHERE job_id=?"
             params = (job_id,)
-        query += " ORDER BY id DESC LIMIT 1"
+        query += (
+            " ORDER BY CASE WHEN scope='full' AND processed_count>=100000 THEN 0 ELSE 1 END,"
+            " id DESC LIMIT 1"
+        )
         with self.connect() as connection:
             row = connection.execute(query, params).fetchone()
         return self._ranking(dict(row)) if row else None

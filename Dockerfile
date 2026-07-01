@@ -18,6 +18,9 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /app
 COPY backend/requirements-runtime.txt ./requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
+COPY README.md submission_metadata.yaml Dockerfile ./
+COPY backend/requirements.txt ./backend/requirements.txt
+COPY backend/requirements-runtime.txt ./backend/requirements-runtime.txt
 COPY backend/app ./app
 COPY backend/data/sandbox/ ./data/
 COPY --from=frontend-build /build/frontend/dist ./frontend_dist

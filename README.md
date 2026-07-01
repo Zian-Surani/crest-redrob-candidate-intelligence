@@ -1,6 +1,6 @@
 ---
 title: Crest Redrob Candidate Intelligence
-emoji: 🔥
+emoji: 🏆
 colorFrom: green
 colorTo: gray
 sdk: docker
@@ -61,7 +61,7 @@ python rank.py --candidates ./candidates.jsonl --job-description ./job_descripti
 
 The current verified artifact is [backend/data/crest_submission.csv](backend/data/crest_submission.csv). It contains exactly 100 ranked records and passes the organizer-supplied validator. Use `--persist` for the final full run so the web analytics and review exports read the same actual 100,000-candidate ranking as the submission CSV.
 
-Latest hybrid benchmark: 100,000 candidates, 580 integrity exclusions, 100 ranked, 201.522 seconds, with `CAND_0018499` at rank 1. The calibrated regression set places `CAND_0000031` at rank 13, moves under-floor `CAND_0042506` below the top 30, restores high-availability 120-day-notice candidates `CAND_0096142` and `CAND_0007412` into fairer rank bands, removes the low-availability `CAND_0094759` from the top 100, excludes the contradictory experience claim on `CAND_0093547`, and removes the zero-product-role Tech Mahindra profile `CAND_0067866`.
+Latest hybrid benchmark: 100,000 candidates, 580 integrity exclusions, 100 ranked, 131.869 seconds, with `CAND_0077337` at rank 1. The calibrated regression set places `CAND_0000031` at rank 12, moves under-floor `CAND_0042506` below the top 30, restores high-availability 120-day-notice candidates `CAND_0096142` and `CAND_0007412` into fairer rank bands, removes the low-availability `CAND_0094759` from the top 100, excludes the contradictory experience claim on `CAND_0093547`, removes the zero-product-role Tech Mahindra profile `CAND_0067866`, and keeps all under-5-year candidates outside the top 20.
 
 Run the independent automated audit after a persisted full ranking:
 
@@ -70,7 +70,17 @@ Set-Location backend
 python -m app.audit --output-dir data --integrity-sample-size 50
 ```
 
-This produces grounded-reasoning checks for all 100 rows, an automated top-50 relevance rubric, a stratified integrity sample, and `automated_audit_report.json`. Automated labels remain separate from the blank human-signoff columns.
+This produces grounded-reasoning checks for all 100 rows, an automated top-50 relevance rubric, a stratified integrity sample, and `automated_audit_report.json`. Existing human labels are preserved by candidate ID; any newly introduced rows can be auto-prefilled for local completeness and then manually skimmed before portal upload.
+
+After any rerank, refresh the review sheets, sandbox snapshot, and evaluation report:
+
+```powershell
+Set-Location backend
+python -m app.review --output data/manual_review_top50.csv --reasoning-output data/reasoning_audit_10.csv --auto-fill-empty --evaluate
+python -m app.artifacts --data-dir data --sandbox-dir data/sandbox --docs-dir ../docs/crest-platform
+```
+
+The current evaluation report is [docs/crest-platform/EVALUATION_REPORT.md](docs/crest-platform/EVALUATION_REPORT.md). The app also exposes `/api/submission/proof` and `/submission-proof` so judges and crawlers can verify that the sandbox is serving the actual persisted full run, not demo/sample data.
 
 Ollama is not required for ranking. To enable it only for interview-question generation, copy `backend/.env.example` values into your environment and set `CREST_OLLAMA_ENABLED=true` plus a downloaded model name.
 
@@ -93,4 +103,4 @@ docker run --rm -p 7860:7860 crest-redrob
 
 Open `http://localhost:7860`. This is the same single-container shape intended for the Hugging Face Docker Space. The raw 100K JSONL and local embedding artifact are intentionally excluded from the public image; the shipped sandbox serves the verified full-run ranking snapshot, submission CSV, and audit exports only. No placeholder candidate dataset is copied into the image.
 
-Verified locally on 28 June 2026: the image became healthy, served the React app, loaded ranking id 19 from the full-run snapshot, reported 100,000 processed candidates, returned analytics, and served review CSV downloads.
+After rebuilding the image, the bundled snapshot should load ranking id 22, report 100,000 processed candidates, return analytics, serve review CSV downloads, and expose the crawler-readable submission proof page.

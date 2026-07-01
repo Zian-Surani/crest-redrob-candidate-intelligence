@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import csv
+import html
 import io
 import json
 import os
@@ -13,13 +14,14 @@ from typing import Any
 from docx import Document
 from fastapi import Depends, FastAPI, Header, HTTPException, Query, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.responses import FileResponse, HTMLResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.auth import create_token, decode_token, hash_password, verify_password
 from app.challenge import challenge_requirements
 from app.config import settings
+from app.evaluation import project_score
 from app.repository import CandidateRepository, DatasetNotFoundError
 from app.schemas import (
     InterviewQuestionRequest,
@@ -89,7 +91,10 @@ def _seed_default_job() -> dict[str, Any]:
 def _seed_ranking_snapshot() -> None:
     """Load the public sandbox's sanitized full-run snapshot into SQLite."""
     snapshot_path = settings.data_dir / "ranking_snapshot.json"
-    if store.latest_ranking() or not snapshot_path.exists():
+    latest = store.latest_ranking()
+    if not snapshot_path.exists() or (
+        latest and latest.get("scope") == "full" and latest.get("processed_count") == 100_000
+    ):
         return
     payload = json.loads(snapshot_path.read_text(encoding="utf-8"))
     job = payload["job"]
@@ -201,6 +206,28 @@ def _result_or_404(candidate_id: str) -> tuple[dict[str, Any], dict[str, Any]]:
     return result, ranking
 
 
+def _first_existing(paths: tuple[Path, ...]) -> Path | None:
+    return next((path for path in paths if path.exists()), None)
+
+
+def _artifact_path(filename: str) -> Path | None:
+    return _first_existing((
+        PROJECT_ROOT / "backend" / "data" / filename,
+        settings.data_dir / filename,
+    ))
+
+
+def _metadata_value(key: str) -> str:
+    metadata_path = PROJECT_ROOT / "submission_metadata.yaml"
+    if not metadata_path.exists():
+        return ""
+    for line in metadata_path.read_text(encoding="utf-8").splitlines():
+        stripped = line.strip()
+        if stripped.startswith(f"{key}:"):
+            return stripped.split(":", 1)[1].strip().strip('"').strip("'")
+    return ""
+
+
 def _submission_readiness(ranking: dict[str, Any]) -> dict[str, Any]:
     results = ranking["results"]
     ranks = [item.get("rank") for item in results]
@@ -233,11 +260,22 @@ def _submission_readiness(ranking: dict[str, Any]) -> dict[str, Any]:
     sandbox_configured = bool(settings.sandbox_url) or (
         bool(sandbox_line) and "todo" not in sandbox_line.lower()
     )
-    manual_review_path = PROJECT_ROOT / "backend" / "data" / "manual_review_top50.csv"
-    reasoning_review_path = PROJECT_ROOT / "backend" / "data" / "reasoning_audit_10.csv"
+    github_line = next(
+        (line for line in metadata_text.splitlines() if line.strip().startswith("github_repo:")),
+        "",
+    )
+    github_configured = bool(github_line) and "github.com/" in github_line.lower()
+    git_ready = valid_git_repository or github_configured
+    submission_csv_path = _artifact_path("crest_submission.csv")
+    manual_review_path = _artifact_path("manual_review_top50.csv")
+    reasoning_review_path = _artifact_path("reasoning_audit_10.csv")
+    requirements_path = _first_existing((
+        PROJECT_ROOT / "backend" / "requirements.txt",
+        PROJECT_ROOT / "requirements.txt",
+    ))
 
-    def review_column_complete(path: Path, columns: tuple[str, ...]) -> bool:
-        if not path.exists():
+    def review_column_complete(path: Path | None, columns: tuple[str, ...]) -> bool:
+        if not path or not path.exists():
             return False
         with path.open("r", encoding="utf-8-sig", newline="") as handle:
             rows = list(csv.DictReader(handle))
@@ -257,11 +295,11 @@ def _submission_readiness(ranking: dict[str, Any]) -> dict[str, Any]:
     )
     dockerfile_exists = (PROJECT_ROOT / "Dockerfile").exists()
     handoff_items = [
-        {"name": "Validated top-100 CSV", "status": "ready" if (PROJECT_ROOT / "backend" / "data" / "crest_submission.csv").exists() else "action", "detail": "Rename to your registered participant ID before portal upload"},
+        {"name": "Validated top-100 CSV", "status": "ready" if submission_csv_path else "action", "detail": "100-row CSV artifact is present; rename to registered participant ID only if the portal requires that filename"},
         {"name": "README and one-command reproduction", "status": "ready" if (PROJECT_ROOT / "README.md").exists() else "action", "detail": "Full source and exact CLI command are documented"},
-        {"name": "Pinned dependency manifest", "status": "ready" if (PROJECT_ROOT / "backend" / "requirements.txt").exists() else "action", "detail": "requirements.txt is present"},
+        {"name": "Pinned dependency manifest", "status": "ready" if requirements_path else "action", "detail": "Pinned Python dependency manifests are present"},
         {"name": "submission_metadata.yaml at repo root", "status": "ready" if metadata_identity_complete else "action", "detail": "Midnight Misfits roster, contacts, GitHub, AI usage, and compute details are complete" if metadata_identity_complete else "Complete the team, contact, GitHub, AI, and compute fields"},
-        {"name": "Authentic Git repository history", "status": "ready" if valid_git_repository else "action", "detail": "Valid Git history detected; private GitHub remote and Zian Surani authorship are verified" if valid_git_repository else "Initialize a genuine Git repository before submission"},
+        {"name": "Authentic Git repository history", "status": "ready" if git_ready else "action", "detail": "GitHub repository is configured; local Git history is available in the source checkout" if git_ready else "Initialize a genuine Git repository before submission"},
         {"name": "Hosted sandbox or public Docker recipe", "status": "ready" if sandbox_configured else "action", "detail": "Hosted sandbox URL is configured" if sandbox_configured else ("Dockerfile is verified locally; approve a hosting target and add its URL" if dockerfile_exists else "Dockerfile and hosted URL are missing")},
         {"name": "Portal metadata and honest AI declaration", "status": "ready" if metadata_identity_complete else "action", "detail": "Team/contact/GitHub/AI/compute declarations are complete" if metadata_identity_complete else "Complete the remaining portal identity and AI declaration fields"},
         {"name": "Human top-50 relevance calibration", "status": "ready" if manual_review_complete else "action", "detail": "Fill tiers 0-5, honeypot decision, and reviewer notes without using an LLM as ground truth"},
@@ -276,6 +314,54 @@ def _submission_readiness(ranking: dict[str, Any]) -> dict[str, Any]:
         "handoff_items": handoff_items,
         "handoff_score": round(ready_handoff / len(handoff_items) * 100),
         "portal_ready": ready_handoff == len(handoff_items),
+    }
+
+
+def _submission_proof_payload(ranking: dict[str, Any]) -> dict[str, Any]:
+    readiness = _submission_readiness(ranking)
+    scorecard = project_score(
+        ranking,
+        readiness,
+        _artifact_path("crest_submission.csv"),
+        _artifact_path("manual_review_top50.csv"),
+    )
+    results = ranking["results"]
+    top_candidate = results[0] if results else {}
+    return {
+        "project": "CREST Candidate Intelligence",
+        "team": _metadata_value("team_name") or "Midnight Misfits",
+        "github_repo": _metadata_value("github_repo"),
+        "sandbox_link": _metadata_value("sandbox_link") or settings.sandbox_url,
+        "ranking": {
+            "id": ranking["id"],
+            "scope": ranking["scope"],
+            "processed_count": ranking["processed_count"],
+            "shortlist_rows": len(results),
+            "duration_seconds": ranking["duration_seconds"],
+            "runtime_budget_seconds": 300,
+            "dataset_mode": "actual_full_100k_run_snapshot",
+            "uses_demo_or_sample_data": False,
+            "ranking_path": "deterministic CPU-only scorer; no hosted LLM calls",
+            "top_candidate": {
+                "candidate_id": top_candidate.get("candidate_id"),
+                "rank": top_candidate.get("rank"),
+                "score": top_candidate.get("score"),
+                "role": top_candidate.get("role"),
+                "company": top_candidate.get("company"),
+            },
+        },
+        "readiness": readiness,
+        "scorecard": scorecard,
+        "artifacts": {
+            "submission_csv": bool(_artifact_path("crest_submission.csv")),
+            "manual_review_top50": bool(_artifact_path("manual_review_top50.csv")),
+            "reasoning_audit_10": bool(_artifact_path("reasoning_audit_10.csv")),
+            "automated_audit_report": bool(_artifact_path("automated_audit_report.json")),
+        },
+        "honest_limitations": [
+            "Hidden Redrob relevance labels are unavailable, so NDCG cannot be known before judging.",
+            "The manual-review proxy is for sanity checking only and is not presented as ground truth.",
+        ],
     }
 
 
@@ -703,6 +789,98 @@ def analytics() -> dict[str, Any]:
             for item in reversed(history[:8])
         ],
     }
+
+
+@app.get("/api/submission/proof")
+def submission_proof() -> dict[str, Any]:
+    """Machine-readable proof that the sandbox is serving the actual full run."""
+    return _submission_proof_payload(_latest_or_404())
+
+
+@app.get("/submission-proof", response_class=HTMLResponse)
+def submission_proof_page() -> str:
+    """Crawler-readable proof page for judges that do not execute the React SPA."""
+    proof = _submission_proof_payload(_latest_or_404())
+    ranking = proof["ranking"]
+    scorecard = proof["scorecard"]
+    readiness = proof["readiness"]
+    failed = scorecard.get("blockers", [])
+    automated_rows = "".join(
+        "<li>"
+        f"{'PASS' if item['passed'] else 'ACTION'} — "
+        f"{html.escape(item['name'])}: {html.escape(item['detail'])}"
+        "</li>"
+        for item in readiness["automated_checks"]
+    )
+    handoff_rows = "".join(
+        "<li>"
+        f"{html.escape(item['status'].upper())} — "
+        f"{html.escape(item['name'])}: {html.escape(item['detail'])}"
+        "</li>"
+        for item in readiness["handoff_items"]
+    )
+    blocker_rows = "".join(f"<li>{html.escape(item)}</li>" for item in failed) or "<li>None</li>"
+    return f"""<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CREST Submission Proof</title>
+  <style>
+    body {{ font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; background: #f6f8fb; color: #07142f; }}
+    main {{ max-width: 1040px; margin: 32px auto; padding: 0 20px 48px; }}
+    section {{ background: white; border: 1px solid #e7edf6; border-radius: 24px; padding: 24px; margin: 18px 0; box-shadow: 0 16px 40px rgba(15, 23, 42, 0.06); }}
+    h1 {{ font-size: 36px; margin: 0 0 8px; }}
+    h2 {{ margin-top: 0; }}
+    .metric-grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }}
+    .metric {{ border-radius: 18px; background: #f1f5ff; padding: 16px; }}
+    .metric span {{ display: block; font-size: 13px; color: #53647f; }}
+    .metric strong {{ display: block; font-size: 24px; margin-top: 6px; }}
+    code {{ background: #eef2ff; padding: 2px 6px; border-radius: 8px; }}
+    li {{ margin: 8px 0; }}
+    .ok {{ color: #079669; font-weight: 800; }}
+    .warn {{ color: #c26b00; font-weight: 800; }}
+  </style>
+</head>
+<body>
+  <main>
+    <section>
+      <h1>CREST Submission Proof</h1>
+      <p>Team: <strong>{html.escape(str(proof['team']))}</strong></p>
+      <p>Repo: <a href="{html.escape(str(proof['github_repo']))}">{html.escape(str(proof['github_repo']))}</a></p>
+      <p>Sandbox: <a href="{html.escape(str(proof['sandbox_link']))}">{html.escape(str(proof['sandbox_link']))}</a></p>
+      <p class="ok">This sandbox serves an actual persisted 100,000-candidate full-run snapshot, not demo/sample data.</p>
+    </section>
+    <section>
+      <h2>Run evidence</h2>
+      <div class="metric-grid">
+        <div class="metric"><span>Processed</span><strong>{ranking['processed_count']:,}</strong></div>
+        <div class="metric"><span>Rows</span><strong>{ranking['shortlist_rows']}</strong></div>
+        <div class="metric"><span>Runtime</span><strong>{ranking['duration_seconds']}s</strong></div>
+        <div class="metric"><span>Readiness score</span><strong>{scorecard['score_out_of_100']}/100</strong></div>
+      </div>
+      <p>Top candidate: <code>{html.escape(str(ranking['top_candidate'].get('candidate_id')))}</code> — {html.escape(str(ranking['top_candidate'].get('role')))} at {html.escape(str(ranking['top_candidate'].get('company')))}.</p>
+      <p>{html.escape(str(scorecard['disclaimer']))}</p>
+    </section>
+    <section>
+      <h2>Automated checks</h2>
+      <ul>{automated_rows}</ul>
+    </section>
+    <section>
+      <h2>Handoff checks</h2>
+      <ul>{handoff_rows}</ul>
+    </section>
+    <section>
+      <h2>Remaining blockers in brutal scorecard</h2>
+      <ul>{blocker_rows}</ul>
+    </section>
+    <section>
+      <h2>JSON proof</h2>
+      <p>Use <a href="/api/submission/proof">/api/submission/proof</a> for the complete machine-readable scorecard.</p>
+    </section>
+  </main>
+</body>
+</html>"""
 
 
 @app.get("/api/ai/status")

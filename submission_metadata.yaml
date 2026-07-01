@@ -1,4 +1,4 @@
-# The sandbox URL remains pending until the team approves public deployment.
+# Public sandbox URL is configured for final review.
 team_name: "Midnight Misfits"
 
 primary_contact:
@@ -38,6 +38,10 @@ compute:
   has_network_during_ranking: false
   pre_computation_required: true
   pre_computation_time_minutes: 20.6
+  latest_rank_run_id: 22
+  latest_rank_runtime_seconds: 131.869
+  latest_rank_processed_candidates: 100000
+  latest_integrity_exclusions: 580
 
 ai_tools_used:
   - "Claude"

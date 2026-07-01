@@ -1,8 +1,8 @@
 {
   "audit_version": 1,
-  "ranking_id": 19,
+  "ranking_id": 22,
   "processed_count": 100000,
-  "duration_seconds": 138.615,
+  "duration_seconds": 131.869,
   "checks": {
     "exactly_100_results": true,
     "sequential_ranks": true,
@@ -19,7 +19,7 @@
   "passed": true,
   "reasoning": {
     "rows_checked": 100,
-    "unique_60_character_prefixes": 79,
+    "unique_60_character_prefixes": 94,
     "failure_counts": {}
   },
   "automated_relevance_tiers": {

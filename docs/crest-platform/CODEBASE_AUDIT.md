@@ -1,6 +1,6 @@
 # CREST Engineering Handoff Audit
 
-Audit date: 24 June 2026
+Audit date: 1 July 2026
 
 ## Result
 
@@ -14,9 +14,9 @@ The codebase is clean for the private GitHub handoff. The final source tree cont
 - Frontend dependencies: `npm audit --omit=dev` found no known vulnerabilities.
 - Python runtime and full manifests: `pip-audit` found no known vulnerabilities after upgrading to FastAPI 0.138.0, Starlette 1.3.1, Uvicorn 0.49.0, Pydantic 2.13.4, and pytest 9.0.3.
 - Submission: the organizer validator reports `Submission is valid.`
-- Full ranking: 100,000 processed, 580 excluded, 100 ranked, 201.522 seconds.
+- Full ranking: 100,000 processed, 580 excluded, 100 ranked, 131.869 seconds.
 - Automated ranking audit: every check in `backend/data/automated_audit_report.json` passes.
-- Docker: the local image served the frontend, health API, analytics, and the persisted full-run ranking snapshot with 100,000 processed candidates.
+- Sandbox artifact bundle: ranking id 22 snapshot, submission CSV, review sheets, automated audits, evaluation report, and crawler-readable submission proof are present.
 - Staged Git content: whitespace and secret scans passed; the staged source excludes placeholder candidate data and includes the sanitized full-run sandbox artifacts.
 
 ## Remote verification
@@ -30,7 +30,6 @@ The codebase is clean for the private GitHub handoff. The final source tree cont
 
 ## Remaining human controls
 
-- Complete the blank human-review fields in `manual_review_top50.csv` and `reasoning_audit_10.csv`.
-- Approve a hosting target before publishing the Docker sandbox.
-- Add the resulting sandbox URL to `submission_metadata.yaml`.
+- Human-skim the two auto-prefilled top-50 review rows introduced by the final rerank: `CAND_0010257` and `CAND_0039383`.
+- Rebuild and redeploy the Docker/Hugging Face sandbox so the hosted runtime serves ranking id 22.
 - Rename the final CSV to the registered participant ID required by the portal.

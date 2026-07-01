@@ -20,11 +20,11 @@ Status: Completed. All dashboard areas use live APIs while keeping the existing 
 
 ### Phase 4: Competition validation
 
-Status: Completed. The calibrated hybrid full pool processes in 201.522 seconds including local MiniLM loading. The final run removed 580 critical/high-risk profiles, ranked 100, placed `CAND_0018499` at rank 1, and the organizer validator accepted the CSV. Ranking-quality regressions pass: `CAND_0000031` is rank 13, under-floor `CAND_0042506` is below the top 30, high-availability 120-day-notice candidates `CAND_0096142` and `CAND_0007412` are restored into fairer rank bands, `CAND_0094759` is outside the top 100, `CAND_0093547` is excluded for contradictory experience claims, and `CAND_0067866` is removed because zero relevant product-system roles are insufficient for the final shortlist.
+Status: Completed. The calibrated hybrid full pool processes in 131.869 seconds including local MiniLM loading. The final run removed 580 critical/high-risk profiles, ranked 100, placed `CAND_0077337` at rank 1, and the CSV format checks pass. Ranking-quality regressions pass: `CAND_0000031` is rank 12, under-floor `CAND_0042506` is below the top 30, high-availability 120-day-notice candidates `CAND_0096142` and `CAND_0007412` are restored into fairer rank bands, `CAND_0094759` is outside the top 100, `CAND_0093547` is excluded for contradictory experience claims, `CAND_0067866` is removed because zero relevant product-system roles are insufficient for the final shortlist, and all under-5-year candidates are outside the top 20.
 
 ### Phase 5: Operational handoff
 
-Status: Engineering completed. Backend tests and frontend lint/build pass. The Docker image was exercised end to end against the persisted 100,000-candidate full-run snapshot: health, frontend, analytics, and review downloads all returned successfully. Automated top-50, 100-row reasoning, and stratified integrity audits pass; public deployment and final human signoff remain team-owned submission actions.
+Status: Engineering completed. Backend tests and frontend lint/build pass. The sandbox artifact bundle now carries ranking id 22, a 100,000-candidate persisted full-run snapshot, the submission CSV, refreshed review sheets, automated audit outputs, and the crawler-readable `/submission-proof` page. Automated top-50, 100-row reasoning, and stratified integrity audits pass. Two newly introduced top-50 manual-review rows are auto-prefilled and should receive a final human skim before portal upload.
 
 ## Architectural Decisions
 

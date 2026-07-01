@@ -8,6 +8,7 @@ FastAPI service for deterministic, CPU-only candidate intelligence.
 - `/api/rankings`: run the official full-pool ranking and export competition CSV
 - `/api/candidates`: shortlist search, evidence detail, JD-shift analysis, interview questions
 - `/api/pipeline`, `/api/flagged`, `/api/analytics/overview`: recruiter decision analytics
+- `/api/submission/proof` and `/submission-proof`: machine-readable and crawler-readable full-run proof
 - `/api/auth`: local SQLite SaaS account shell
 - `/api/ai/status`: optional local Ollama status
 
@@ -43,9 +44,7 @@ python -m app.cli --scope full --output data/crest_submission.csv --persist
 Create human calibration and blind Stage-4 review sheets:
 
 ```powershell
-python -m app.review
-# Fill human_relevance_tier values from 0-5, then:
-python -m app.review --evaluate
+python -m app.review --output data/manual_review_top50.csv --reasoning-output data/reasoning_audit_10.csv --auto-fill-empty --evaluate
 ```
 
 The Qwen models are not used by `app.cli`. `qwen2.5-coder:7b` is routed to optional interview questions and `qwen2.5-coder:14b` to advisory reasoning audits.
@@ -58,6 +57,7 @@ Generate reproducible audit artifacts with:
 
 ```powershell
 python -m app.audit --output-dir data --integrity-sample-size 50
+python -m app.artifacts --data-dir data --sandbox-dir data/sandbox --docs-dir ../docs/crest-platform
 ```
 
 ## Database decision

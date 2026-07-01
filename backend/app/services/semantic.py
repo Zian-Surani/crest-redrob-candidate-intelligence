@@ -38,7 +38,7 @@ class SemanticScorer:
         self.ids_path = artifact_dir / "candidate_ids.txt"
         self.metadata_path = artifact_dir / "metadata.json"
         self.bulk_similarity = os.getenv(
-            "CREST_SEMANTIC_BULK_SIMILARITY", "false"
+            "CREST_SEMANTIC_BULK_SIMILARITY", "true"
         ).strip().lower() in {"1", "true", "yes", "on"}
         self._embeddings = None
         self._id_to_index: dict[str, int] | None = None

@@ -1,0 +1,69 @@
+{
+  "score_out_of_100": 97.0,
+  "engineering_readiness_score": 100.0,
+  "uncertainty_penalties": [
+    {
+      "name": "hidden_redrob_labels_unavailable",
+      "points": 3.0,
+      "reason": "No team can verify the official hidden NDCG before judging."
+    }
+  ],
+  "band": "winner-ready",
+  "csv": {
+    "present": true,
+    "score": 22.0,
+    "checks": {
+      "present": true,
+      "exactly_100_rows": true,
+      "sequential_ranks": true,
+      "unique_candidate_ids": true,
+      "scores_non_increasing": true,
+      "reasoning_non_empty": true
+    }
+  },
+  "ranking_checks": {
+    "CAND_0000031_top20": true,
+    "CAND_0042506_below_top30": true,
+    "CAND_0096142_reasonable_20_to_45": true,
+    "CAND_0007412_reasonable_30_to_60": true,
+    "CAND_0094759_excluded_or_below85": true,
+    "CAND_0093547_excluded": true,
+    "CAND_0067866_excluded": true,
+    "top10_meet_experience_floor": true,
+    "top10_response_at_least_50": true,
+    "top20_no_unavailable_low_response": true,
+    "top50_no_services_only": true
+  },
+  "reasoning_checks": {
+    "all_reasonings_unique": true,
+    "opener_variety_at_least_70": true,
+    "no_internal_leaks": true,
+    "concerns_in_risky_rows": true
+  },
+  "operational_checks": {
+    "full_100k_run": true,
+    "runtime_under_300s": true,
+    "automated_readiness_100": true,
+    "handoff_readiness_100": true,
+    "no_demo_sample_mode": true
+  },
+  "manual_proxy": {
+    "available": true,
+    "filled_rows": 50,
+    "auto_prefilled_rows": 0,
+    "rows": 50,
+    "ndcg_at_10_proxy": 1.0,
+    "ndcg_at_20_proxy": 0.945,
+    "ndcg_at_50_proxy": 0.9856,
+    "note": "Proxy only: this uses the team's review labels for sanity checking, not Redrob's hidden relevance labels."
+  },
+  "observed": {
+    "reasoning_opener4_unique": 90,
+    "rows": 100,
+    "processed_count": 100000,
+    "duration_seconds": 131.869,
+    "top_candidate": "CAND_0077337"
+  },
+  "blockers": [],
+  "disclaimer": "This is a brutal engineering/readiness score. It cannot know Redrob's hidden NDCG labels, so it should be used to reduce visible risk, not as a guaranteed leaderboard score."
+}

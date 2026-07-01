@@ -15,18 +15,17 @@
 - Responsive Analytics and Pipeline layouts with browser regression coverage at 1478x1000 and 1280x800
 - Human top-50 calibration and blind ten-row reasoning-review sheets
 - Passing automated audit of all 100 explanations, top-50 relevance, and 50 integrity exclusions
-- Verified single-container Docker sandbox using the persisted 100,000-candidate full-run snapshot
+- Single-container Docker/Hugging Face sandbox shape using the persisted 100,000-candidate full-run snapshot
 - Root submission metadata scaffold and exact reproduction commands
 - Private `Zian-Surani/crest-redrob-candidate-intelligence` repository with verified `main` tree and authorship
 
 ## Human/team actions still required
 
-- Add the hosted sandbox URL to `submission_metadata.yaml` only after public deployment is approved
-- Label all rows in `backend/data/manual_review_top50.csv` with relevance tiers 0-5 and reviewer notes
-- Complete all six checks in `backend/data/reasoning_audit_10.csv`
-- Manually inspect a sample of excluded integrity profiles for false positives
-- Deploy the verified Docker image to a public Docker registry or Hugging Face Docker Space
-- Publish or reproduce the MiniLM artifact via Git LFS, release storage, or the documented precompute script
+- Rebuild and redeploy the Docker/Hugging Face sandbox so the hosted runtime serves ranking id 22
+- Human-skim the two auto-prefilled final top-50 rows: `CAND_0010257` and `CAND_0039383`
+- Manually inspect a sample of excluded integrity profiles for false positives if the portal asks for reviewer signoff
+- Re-run the hosted `/api/submission/proof` check after deployment and confirm it reports 100,000 processed candidates
+- Publish or reproduce the MiniLM artifact through the documented precompute script; do not upload the raw 100K dataset publicly
 - Rehearse the 30-minute architecture defense with every team member
 - Prepare the portal fields and submit only after the final validator run; the last of at most three valid submissions counts
 
