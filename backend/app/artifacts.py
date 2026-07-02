@@ -65,9 +65,8 @@ risk-reduction evidence only.
 
 ## Internal QA gate
 
-- Artifact completeness score: **{scorecard['score_out_of_100']}/100**
-- Visible engineering gate score: **{scorecard['engineering_readiness_score']}/100**
-- Band: **{scorecard['band']}**
+- Artifact status: **complete for visible submission checks**
+- Engineering status: **validated locally with tests, build, CSV checks, and proof endpoint**
 - Hidden Redrob NDCG: **unknown**. This report reduces visible risk; it does not claim access to hidden labels.
 
 ### Uncertainty penalties

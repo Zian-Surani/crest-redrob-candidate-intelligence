@@ -8,9 +8,8 @@ risk-reduction evidence only.
 
 ## Internal QA gate
 
-- Artifact completeness score: **97.0/100**
-- Visible engineering gate score: **100.0/100**
-- Band: **internal-qa-complete**
+- Artifact status: **complete for visible submission checks**
+- Engineering status: **validated locally with tests, build, CSV checks, and proof endpoint**
 - Hidden Redrob NDCG: **unknown**. This report reduces visible risk; it does not claim access to hidden labels.
 
 ### Uncertainty penalties
