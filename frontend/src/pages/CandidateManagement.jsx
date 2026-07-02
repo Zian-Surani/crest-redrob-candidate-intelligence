@@ -30,7 +30,7 @@ export default function CandidateManagement() {
     event.preventDefault()
     const form = new FormData(event.currentTarget)
     if (!canRunFull) {
-      setActionError('This hosted sandbox serves the verified 100K full-run snapshot. Mount the official candidates.jsonl locally to rerun the ranking pipeline.')
+      setActionError('This hosted sandbox serves the verified 100K full-run snapshot. Candidate-level JD-shift analysis is live; full 100K reranking requires mounting the official candidates.jsonl locally.')
       return
     }
     setRunning(true); setActionError('')
@@ -89,7 +89,7 @@ export default function CandidateManagement() {
           <form onSubmit={runRanking} className="bg-white rounded-premium shadow-2xl border border-slate-200 w-full max-w-md p-7">
             <div className="flex justify-between mb-6"><div><h2 className="text-xl font-bold text-slate-900">Run candidate ranking</h2><p className="text-sm text-slate-500 mt-1">The full run streams all 100,000 official profiles when the raw JSONL is mounted locally.</p></div><button type="button" onClick={() => setRunOpen(false)}><span className="material-symbols-outlined text-slate-400">close</span></button></div>
             <label className="block text-xs font-bold text-slate-600 mb-2">Job description</label><select name="job_id" required className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-3 text-sm mb-4">{(jobs || []).map((job) => <option key={job.id} value={job.id}>{job.title} · {job.company}</option>)}</select>
-            <div className="mb-5 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">{canRunFull ? 'Official 100K candidates.jsonl is mounted. A rerun will execute the full deterministic pipeline.' : 'Hosted mode is snapshot-only: it serves the verified 100K full-run ranking, not placeholder data. Rerun locally after mounting the official candidates.jsonl.'}</div>
+            <div className="mb-5 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">{canRunFull ? 'Official 100K candidates.jsonl is mounted. A rerun will execute the full deterministic pipeline.' : 'Hosted mode serves the verified 100K full-run ranking snapshot, not placeholder data. Candidate-level JD shift works live; full rerun locally after mounting the official candidates.jsonl.'}</div>
             <button disabled={running || !jobs?.length || !canRunFull} className="w-full bg-primary text-white rounded-xl py-3 text-sm font-bold disabled:opacity-50">{running ? 'Ranking candidates…' : 'Run full evidence pipeline'}</button>
           </form>
         </div>

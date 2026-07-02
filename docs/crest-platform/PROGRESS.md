@@ -2,7 +2,7 @@
 
 ## Status: Completed
 
-The Analytics module now includes recruiter instructions, all 23 behavioral signals, component/requirement/experience/notice/company/integrity distributions, CPH and salary-overlap analysis, local product events, official scoring weights, five evaluation stages, automated CSV readiness, and outstanding portal handoff actions.
+The Analytics module now includes recruiter instructions, all 23 behavioral signals, component/requirement/experience/notice/company/integrity distributions, CPH and salary-overlap analysis, local product events, official scoring weights, five evaluation stages, automated CSV readiness, and final portal handoff actions.
 
 ## Phase Progress
 
@@ -12,7 +12,7 @@ Status: Completed. Streaming repository, JD parser, integrity detector, evidence
 
 ### Phase 2: SaaS API
 
-Status: Completed. FastAPI exposes auth, jobs, rankings, exports, candidates, JD shift, questions, pipeline, flags, analytics, health, About, and Ollama status.
+Status: Completed. FastAPI exposes auth, jobs, rankings, exports, candidates, candidate-level JD shift, questions, pipeline, flags, analytics, health, About, and Ollama status.
 
 ### Phase 3: Frontend integration
 
@@ -20,11 +20,11 @@ Status: Completed. All dashboard areas use live APIs while keeping the existing 
 
 ### Phase 4: Competition validation
 
-Status: Completed. The calibrated hybrid full pool processes in 131.869 seconds including local MiniLM loading. The final run removed 580 critical/high-risk profiles, ranked 100, placed `CAND_0077337` at rank 1, and the CSV format checks pass. Ranking-quality regressions pass: `CAND_0000031` is rank 12, under-floor `CAND_0042506` is below the top 30, high-availability 120-day-notice candidates `CAND_0096142` and `CAND_0007412` are restored into fairer rank bands, `CAND_0094759` is outside the top 100, `CAND_0093547` is excluded for contradictory experience claims, `CAND_0067866` is removed because zero relevant product-system roles are insufficient for the final shortlist, and all under-5-year candidates are outside the top 20.
+Status: Completed. The calibrated hybrid full pool processes in 131.869 seconds including local MiniLM loading. The final run removed 580 critical/high-risk profiles, ranked 100, placed `CAND_0077337` at rank 1, and the CSV format checks pass. General quality gates pass: no services-only profiles in the final top 100, no under-5-year candidates in the top 20, no unavailable low-response candidates in the top 50, no leaked internal variables in reasoning, and all rows have unique grounded explanations. Specific candidate-ID checks are retained only as internal regression tests for failure modes found during manual review.
 
 ### Phase 5: Operational handoff
 
-Status: Engineering completed. Backend tests and frontend lint/build pass. The sandbox artifact bundle now carries ranking id 22, a 100,000-candidate persisted full-run snapshot, the submission CSV, refreshed review sheets, automated audit outputs, and the crawler-readable `/submission-proof` page. Automated top-50, 100-row reasoning, and stratified integrity audits pass. Two newly introduced top-50 manual-review rows are auto-prefilled and should receive a final human skim before portal upload.
+Status: Engineering completed. Backend tests and frontend lint/build pass. The sandbox artifact bundle carries ranking id 22, a 100,000-candidate persisted full-run snapshot, the submission CSV, refreshed review sheets, automated audit outputs, and the crawler-readable `/submission-proof` page. Automated top-50, 100-row reasoning, and stratified integrity audits pass. The completed manual top-50 and blind ten-row reasoning review files are support artifacts, not official hidden-label claims.
 
 ## Architectural Decisions
 

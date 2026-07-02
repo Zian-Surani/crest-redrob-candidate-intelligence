@@ -2,11 +2,15 @@
 
 Generated from persisted ranking `22`.
 
-## Honest score
+This is an internal QA artifact. It is not an official Redrob score, does not claim
+access to hidden relevance labels, and should be read as reproducibility and
+risk-reduction evidence only.
 
-- Win-readiness score: **97.0/100**
+## Internal QA gate
+
+- Artifact completeness score: **97.0/100**
 - Visible engineering gate score: **100.0/100**
-- Band: **winner-ready**
+- Band: **internal-qa-complete**
 - Hidden Redrob NDCG: **unknown**. This report reduces visible risk; it does not claim access to hidden labels.
 
 ### Uncertainty penalties
@@ -22,7 +26,23 @@ Generated from persisted ranking `22`.
 - Top candidate: `CAND_0077337` at score `98.377`
 - Data mode: actual full-run snapshot, not sample/demo data
 
-## Canary checks
+## General ranking risk checks
+
+- PASS `top10_meet_experience_floor`
+- PASS `top20_meet_experience_floor`
+- PASS `top10_response_at_least_50`
+- PASS `top20_response_at_least_50`
+- PASS `top20_no_unavailable_low_response`
+- PASS `top50_no_services_only`
+- PASS `top50_no_unavailable_low_response`
+- PASS `top100_no_services_only`
+- PASS `top100_no_integrity_failures`
+
+## Non-scoring calibration regressions
+
+These candidate-ID checks are retained only to prevent previously observed failure
+modes from reappearing. They are not presented as proof of hidden leaderboard
+quality.
 
 - PASS `CAND_0000031_top20`
 - PASS `CAND_0042506_below_top30`
@@ -31,10 +51,6 @@ Generated from persisted ranking `22`.
 - PASS `CAND_0094759_excluded_or_below85`
 - PASS `CAND_0093547_excluded`
 - PASS `CAND_0067866_excluded`
-- PASS `top10_meet_experience_floor`
-- PASS `top10_response_at_least_50`
-- PASS `top20_no_unavailable_low_response`
-- PASS `top50_no_services_only`
 
 ## Reasoning quality
 

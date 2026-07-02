@@ -8,7 +8,7 @@
       "reason": "No team can verify the official hidden NDCG before judging."
     }
   ],
-  "band": "winner-ready",
+  "band": "internal-qa-complete",
   "csv": {
     "present": true,
     "score": 22.0,
@@ -22,17 +22,24 @@
     }
   },
   "ranking_checks": {
+    "top10_meet_experience_floor": true,
+    "top20_meet_experience_floor": true,
+    "top10_response_at_least_50": true,
+    "top20_response_at_least_50": true,
+    "top20_no_unavailable_low_response": true,
+    "top50_no_services_only": true,
+    "top50_no_unavailable_low_response": true,
+    "top100_no_services_only": true,
+    "top100_no_integrity_failures": true
+  },
+  "calibration_regression_checks": {
     "CAND_0000031_top20": true,
     "CAND_0042506_below_top30": true,
     "CAND_0096142_reasonable_20_to_45": true,
     "CAND_0007412_reasonable_30_to_60": true,
     "CAND_0094759_excluded_or_below85": true,
     "CAND_0093547_excluded": true,
-    "CAND_0067866_excluded": true,
-    "top10_meet_experience_floor": true,
-    "top10_response_at_least_50": true,
-    "top20_no_unavailable_low_response": true,
-    "top50_no_services_only": true
+    "CAND_0067866_excluded": true
   },
   "reasoning_checks": {
     "all_reasonings_unique": true,
@@ -62,8 +69,9 @@
     "rows": 100,
     "processed_count": 100000,
     "duration_seconds": 131.869,
-    "top_candidate": "CAND_0077337"
+    "top_candidate": "CAND_0077337",
+    "calibration_regression_note": "Specific candidate-ID checks are retained only as regression tests for known failure modes found during manual review. They are not used as proof of hidden leaderboard quality."
   },
   "blockers": [],
-  "disclaimer": "This is a brutal engineering/readiness score. It cannot know Redrob's hidden NDCG labels, so it should be used to reduce visible risk, not as a guaranteed leaderboard score."
+  "disclaimer": "This is an internal artifact-completeness and risk score. It cannot know Redrob's hidden NDCG labels, so it must not be presented as a guaranteed leaderboard score."
 }

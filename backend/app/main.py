@@ -352,6 +352,10 @@ def _submission_proof_payload(ranking: dict[str, Any]) -> dict[str, Any]:
         },
         "readiness": readiness,
         "scorecard": scorecard,
+        "scorecard_interpretation": (
+            "Internal artifact-completeness and risk score only. Hidden Redrob "
+            "NDCG labels are unavailable before judging."
+        ),
         "artifacts": {
             "submission_csv": bool(_artifact_path("crest_submission.csv")),
             "manual_review_top50": bool(_artifact_path("manual_review_top50.csv")),
@@ -857,10 +861,11 @@ def submission_proof_page() -> str:
         <div class="metric"><span>Processed</span><strong>{ranking['processed_count']:,}</strong></div>
         <div class="metric"><span>Rows</span><strong>{ranking['shortlist_rows']}</strong></div>
         <div class="metric"><span>Runtime</span><strong>{ranking['duration_seconds']}s</strong></div>
-        <div class="metric"><span>Readiness score</span><strong>{scorecard['score_out_of_100']}/100</strong></div>
+        <div class="metric"><span>Internal QA score</span><strong>{scorecard['score_out_of_100']}/100</strong></div>
       </div>
       <p>Top candidate: <code>{html.escape(str(ranking['top_candidate'].get('candidate_id')))}</code> — {html.escape(str(ranking['top_candidate'].get('role')))} at {html.escape(str(ranking['top_candidate'].get('company')))}.</p>
       <p>{html.escape(str(scorecard['disclaimer']))}</p>
+      <p>This number is not an official Redrob score and does not claim access to hidden relevance labels.</p>
     </section>
     <section>
       <h2>Automated checks</h2>
@@ -871,7 +876,7 @@ def submission_proof_page() -> str:
       <ul>{handoff_rows}</ul>
     </section>
     <section>
-      <h2>Remaining blockers in brutal scorecard</h2>
+      <h2>Remaining blockers in internal QA scorecard</h2>
       <ul>{blocker_rows}</ul>
     </section>
     <section>

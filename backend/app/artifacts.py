@@ -47,18 +47,25 @@ def _write_report(path: Path, scorecard: dict[str, Any], ranking: dict[str, Any]
         f"- `{item['name']}`: -{item['points']} ({item['reason']})"
         for item in scorecard.get("uncertainty_penalties", [])
     )
-    canaries = scorecard["ranking_checks"]
-    canary_text = "\n".join(
+    ranking_text = "\n".join(
         f"- {'PASS' if passed else 'FAIL'} `{name}`"
-        for name, passed in canaries.items()
+        for name, passed in scorecard["ranking_checks"].items()
+    )
+    regression_text = "\n".join(
+        f"- {'PASS' if passed else 'FAIL'} `{name}`"
+        for name, passed in scorecard.get("calibration_regression_checks", {}).items()
     )
     report = f"""# CREST Evaluation Report
 
 Generated from persisted ranking `{ranking['id']}`.
 
-## Honest score
+This is an internal QA artifact. It is not an official Redrob score, does not claim
+access to hidden relevance labels, and should be read as reproducibility and
+risk-reduction evidence only.
 
-- Win-readiness score: **{scorecard['score_out_of_100']}/100**
+## Internal QA gate
+
+- Artifact completeness score: **{scorecard['score_out_of_100']}/100**
 - Visible engineering gate score: **{scorecard['engineering_readiness_score']}/100**
 - Band: **{scorecard['band']}**
 - Hidden Redrob NDCG: **unknown**. This report reduces visible risk; it does not claim access to hidden labels.
@@ -76,9 +83,17 @@ Generated from persisted ranking `{ranking['id']}`.
 - Top candidate: `{ranking['results'][0]['candidate_id']}` at score `{ranking['results'][0]['score']}`
 - Data mode: actual full-run snapshot, not sample/demo data
 
-## Canary checks
+## General ranking risk checks
 
-{canary_text}
+{ranking_text}
+
+## Non-scoring calibration regressions
+
+These candidate-ID checks are retained only to prevent previously observed failure
+modes from reappearing. They are not presented as proof of hidden leaderboard
+quality.
+
+{regression_text}
 
 ## Reasoning quality
 
@@ -144,7 +159,7 @@ def export_latest(data_dir: Path, sandbox_dir: Path, docs_dir: Path) -> dict[str
         "ranking_id": ranking["id"],
         "processed_count": ranking["processed_count"],
         "duration_seconds": ranking["duration_seconds"],
-        "score_out_of_100": scorecard["score_out_of_100"],
+        "artifact_completeness_score": scorecard["score_out_of_100"],
         "blockers": scorecard["blockers"],
         "snapshot": str((sandbox_dir / "ranking_snapshot.json").resolve()),
         "report": str((docs_dir / "EVALUATION_REPORT.md").resolve()),

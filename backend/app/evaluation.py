@@ -99,7 +99,7 @@ def project_score(
     opener4 = {" ".join(reasoning.split()[:4]) for reasoning in reasonings if reasoning.strip()}
     csv_report = _csv_checks(submission_csv_path)
 
-    canaries = {
+    regression_checks = {
         "CAND_0000031_top20": positions.get("CAND_0000031", 10_000) <= 20,
         "CAND_0042506_below_top30": positions.get("CAND_0042506", 10_000) > 30,
         "CAND_0096142_reasonable_20_to_45": 20 <= positions.get("CAND_0096142", 10_000) <= 45,
@@ -109,14 +109,23 @@ def project_score(
         "CAND_0067866_excluded": "CAND_0067866" not in positions,
     }
     ranking_checks = {
-        **canaries,
         "top10_meet_experience_floor": all(float(item.get("years_experience", 0) or 0) >= 5 for item in top10),
+        "top20_meet_experience_floor": all(float(item.get("years_experience", 0) or 0) >= 5 for item in top20),
         "top10_response_at_least_50": all(float(item.get("response_rate", 0) or 0) >= 0.50 for item in top10),
+        "top20_response_at_least_50": all(float(item.get("response_rate", 0) or 0) >= 0.50 for item in top20),
         "top20_no_unavailable_low_response": all(
             bool(item.get("open_to_work")) or float(item.get("response_rate", 0) or 0) >= 0.60
             for item in top20
         ),
         "top50_no_services_only": not any(bool(item.get("services_only")) for item in top50),
+        "top50_no_unavailable_low_response": all(
+            bool(item.get("open_to_work")) or float(item.get("response_rate", 0) or 0) >= 0.60
+            for item in top50
+        ),
+        "top100_no_services_only": not any(bool(item.get("services_only")) for item in results),
+        "top100_no_integrity_failures": all(
+            bool(item.get("integrity", {}).get("passed")) for item in results
+        ),
     }
     reasoning_checks = {
         "all_reasonings_unique": len(set(reasonings)) == len(reasonings) == 100,
@@ -177,9 +186,10 @@ def project_score(
         "score_out_of_100": round(win_score, 1),
         "engineering_readiness_score": round(engineering_total, 1),
         "uncertainty_penalties": uncertainty_penalties,
-        "band": "winner-ready" if win_score >= 96 else "strong" if win_score >= 90 else "needs-work",
+        "band": "internal-qa-complete" if win_score >= 96 else "strong-internal-qa" if win_score >= 90 else "needs-work",
         "csv": csv_report,
         "ranking_checks": ranking_checks,
+        "calibration_regression_checks": regression_checks,
         "reasoning_checks": reasoning_checks,
         "operational_checks": operational_checks,
         "manual_proxy": manual_proxy,
@@ -189,10 +199,15 @@ def project_score(
             "processed_count": ranking.get("processed_count"),
             "duration_seconds": ranking.get("duration_seconds"),
             "top_candidate": results[0].get("candidate_id") if results else None,
+            "calibration_regression_note": (
+                "Specific candidate-ID checks are retained only as regression tests for known "
+                "failure modes found during manual review. They are not used as proof of hidden "
+                "leaderboard quality."
+            ),
         },
         "blockers": blockers,
         "disclaimer": (
-            "This is a brutal engineering/readiness score. It cannot know Redrob's hidden "
-            "NDCG labels, so it should be used to reduce visible risk, not as a guaranteed leaderboard score."
+            "This is an internal artifact-completeness and risk score. It cannot know Redrob's "
+            "hidden NDCG labels, so it must not be presented as a guaranteed leaderboard score."
         ),
     }

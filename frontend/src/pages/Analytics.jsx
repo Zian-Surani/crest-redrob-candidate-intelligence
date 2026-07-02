@@ -657,7 +657,7 @@ function Readiness({ data }) {
           <div className="flex justify-between">
             <div>
               <p className="text-xs uppercase tracking-wider font-bold text-slate-400">
-                Automated readiness
+                Artifact readiness
               </p>
               <p className="text-4xl font-bold text-success mt-2">
                 {readiness.automated_score || 0}%
@@ -790,11 +790,11 @@ function Readiness({ data }) {
       <Instruction
         title="Winning priorities from this point"
         steps={[
-          "Have a team member sign off the top-10/top-50 relevance sheet; hidden NDCG quality dominates the score.",
-          "Complete the blind ten-row human reasoning review; the automated audit already passes all 100 rows.",
-          "Approve a hosting target, deploy the verified private Docker image, and add the resulting sandbox URL.",
-          "Rename the final CSV to the registered participant ID and perform one final organizer-validator run.",
-          "Rehearse the ranking weights, integrity rules, regression fixes, and architecture defense with every team member.",
+          "Submit the validated ranked output CSV/XLSX exactly in the portal-requested format.",
+          "Keep the top-50 review and blind reasoning audit as support artifacts; do not present them as hidden ground truth.",
+          "Use the hosted proof endpoint to show the full-run snapshot, then explain that full 100K reruns require the official dataset mounted locally.",
+          "Avoid accuracy or official-NDCG claims; report runtime, validator pass, manual proxy limitations, and audit coverage.",
+          "Rehearse the ranking weights, integrity rules, regression checks, and architecture defense with every team member.",
         ]}
       />
     </div>
